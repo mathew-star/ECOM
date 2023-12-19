@@ -1,7 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from accounts import form
+from django.contrib import messages
 from django.urls import reverse ,reverse_lazy
 from django.contrib.auth import login as auth_login,authenticate,logout as auth_logout
 from accounts.form import CustomUserCreationForm
@@ -11,10 +12,79 @@ from myadmin.models import Category,Products,ProductImages
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.conf import settings
 from django.core.mail import send_mail
 import pyotp
+import jwt
+from django.conf import settings
+from datetime import datetime, timedelta
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.http import JsonResponse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.views import View
+
+
+
+class PasswordResetTokenGeneratorExtended(PasswordResetTokenGenerator):
+    def _make_hash_value(self, user, timestamp):
+        return (
+            str(user.pk) + str(timestamp) + str(user.is_active)
+        )
+def password_reset_request(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = CustomUser.objects.get(email=email)
+
+        # Generate token
+        token_generator = PasswordResetTokenGeneratorExtended()
+        token = token_generator.make_token(user)
+
+        # Create JWT token
+        expiration_time = datetime.utcnow() + timedelta(days=1)
+        token_payload = {
+            'user_id': user.id,
+            'exp': expiration_time,
+        }
+        jwt_token = jwt.encode(token_payload, settings.JWT_SECRET_KEY, algorithm='HS256')
+
+        # Send email with reset link
+        reset_url = f'{settings.BASE_URL}/reset/{urlsafe_base64_encode(force_bytes(user.pk))}/{jwt_token}'
+        send_mail(
+            'Password Reset',
+            f'Click the link to reset your password: {reset_url}',
+            'mjunni99@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+
+        messages.success(request,"Email has been sent to your email address")
+    return render(request, 'accounts/password_reset_request.html')
+
+
+
+def password_reset_confirm(request, uidb64, token):
+    try:
+        user_id = str(urlsafe_base64_decode(uidb64), 'utf-8')
+        user = get_object_or_404(CustomUser, id=user_id)
+        jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+    except (TypeError, ValueError, OverflowError, jwt.ExpiredSignatureError):
+        messages.warning(request,"Invalid test link...Go to login")
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if new_password != confirm_password:
+            messages.success(request,"Password reset sucessfull")
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        messages.success(request, 'Password reset successfully.')
+    return render(request, 'accounts/password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
+
 
 
 
