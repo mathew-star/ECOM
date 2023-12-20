@@ -8,6 +8,7 @@ from accounts.models import CustomUser
 from myadmin.models import BlockedUser,Products,ProductImages
 from django.shortcuts import render, get_object_or_404, redirect
 from myadmin.forms import CategoryForm
+
 from django.apps import apps
 Category = apps.get_model('myadmin', 'Category')
 
@@ -225,3 +226,4 @@ def delete_product(request, product_id):
     product = get_object_or_404(Products, id=product_id)
     product.delete()
     return redirect('product_list')
+

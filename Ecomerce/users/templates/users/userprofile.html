@@ -1,0 +1,236 @@
+{% extends "users/ubase.html" %}
+
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static "css/userprofile.css" %} ">
+
+{% endblock %}
+
+{% block main %}
+
+<div class="container-fluid">
+
+    <div class="col-md-4 d-flex " id="profile-card">
+    <i class="fa-solid fa-circle-user fa-2xl" style="color: #000000; margin-top: 20px; margin-left: 8px; "></i>
+      <div class="DxGiT2 ">
+        <div class="_2QZ3Er mb-2" style="margin-left:10px;  font-size:0.6rem">Hello</div>
+        <div class="_1ruvv2 ms-2" style="font-size:1rem"> {{user.name}} </div>
+      </div>
+    </div>
+
+    <nav id="sidebar" class="col-md-4 d-md-block sidebar">
+      <div class="position-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-heart icon "></i>Wishlist
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-shopping-cart icon"></i>My Cart
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-wallet icon"></i> My Wallet
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-clipboard-list icon"></i>My Orders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-reply icon"></i>Returns
+            </a>
+          </li>
+        </ul>
+        <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+      </div>
+    </nav>
+
+    <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
+      <div class="container mt-3" style="height: 100vh;">
+
+        <div class="row">
+          <div class="col-md-8">
+            <h2>Welcome to Your User Profile!</h2>
+          </div>
+          <div class="col-md-4 text-right">
+            <button id="edit-btn" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</button>
+          </div>
+        </div>
+
+        <!-- User Details -->
+        <form id="profile-form" method="post" action="{% url 'edituser' user_id=user.id %}">
+
+          {% csrf_token %}
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="user-details">
+                <label for="name" class="form-label">Name:</label>
+                <div class="input-group">
+                  <input id="name-input" type="text" name="name" class="form-control" id="name" value="{{user.name}}" readonly>
+                </div>
+              </div>
+            </div>
+            <!-- Add more fields as needed -->
+            <div class="col-md-6">
+              <div class="user-details">
+                <label for="email" class="form-label">Email:</label>
+                <div class="input-group">
+                  <input id="email-input" type="text" name="email" class="form-control" id="email" value="{{user.email}}"
+                    readonly=True>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mt-3">
+              <div class="user-details">
+                <label for="phone" class="form-label">Phone Number:</label>
+                <div class="input-group">
+                  <input id="phone-input" type="text" name="phone number" class="form-control" id="phone" value="{{user.phone_number}}" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button id="save-btn" class="btn btn-primary save-btn" type="button" style="display:none;"><i
+              class="fas fa-save"></i> Save</button>
+        </form>
+
+        <div class="col-md-12 mt-4">
+          <h4>Addresses:</h4>
+
+          <!-- Display user addresses in a grid -->
+          {% if addresses %}
+          <div class="row row-cols-1 row-cols-md-2 g-3" id="addressesContainer">
+            {% for address in addresses %}
+            <div class="col-md-6 address-card">
+              <div class="card" style="border-radius: 10px;">
+                <div class="card-body">
+                  <a href="" style="float: right;"><i class="fas fa-edit"></i></a>
+                  <strong>Address 1:</strong><br>
+                  
+                  Name: {{address.name}}<br>
+                  Phone: {{address.phone_number}}<br>
+                  Pincode: {{address.pincode}}<br>
+                  Locality:{{address.locality}}<br>
+                  Address: {{address.address}}<br>
+                  City/District/Town: {{address.city}}<br>
+                  State:{{address.state}}<br>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+
+          </div>
+          {% else %}
+          <p>You have no saved addresses. Add..!</p>
+          {% endif %}
+
+          <!-- Add Address Button -->
+          <button class="btn btn-primary mt-5 add-address-btn" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+            <i class="fas fa-plus me-2"></i>Add Address
+          </button>
+
+          <!-- Add Address Modal -->
+          <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="addAddressModalLabel">Add Address</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <!-- Add Address Form -->
+                  <form id="addAddressForm" method="post" action="{% url "add_address" %}">
+                    <!-- Add form fields here -->
+                    {% csrf_token %}
+                    {{ form.as_p }}
+
+                    <button type="submit" class="btn btn-primary" >Add Address</button>
+                </form>
+                
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+
+{% endblock %}
+
+{% block script %}
+
+<script>
+    document.getElementById('edit-btn').addEventListener('click', function () {
+      document.getElementById('name-input').readOnly = false;
+      document.getElementById('email-input').readOnly = false;
+      document.getElementById('phone-input').readOnly = false;
+      document.getElementById('save-btn').style.display = 'block';
+    });
+
+    document.getElementById('save-btn').addEventListener('click', function () {
+      document.getElementById('name-input').readOnly = true;
+      document.getElementById('email-input').readOnly = true;
+      document.getElementById('phone-input').readOnly = true;
+      document.getElementById('save-btn').style.display = 'none';
+      document.getElementById('profile-form').submit();
+    });
+
+    $(document).ready(function () {
+      var addressCount = 0;
+
+      $('#saveAddressBtn').on('click', function () {
+        // Retrieve form values
+        var name = $('#name').val();
+        var phone = $('#phone').val();
+        var pincode = $('#pincode').val();
+        var locality = $('#locality').val();
+        var address = $('#address').val();
+        var city = $('#city').val();
+        var state = $('#state').val();
+
+        // Create HTML for the new address
+        var newAddressHtml = `
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <strong>Address ${addressCount + 1}:</strong><br>
+                                <strong>Name:</strong> ${name}<br>
+                                <strong>Phone:</strong> ${phone}<br>
+                                <strong>Pincode:</strong> ${pincode}<br>
+                                <strong>Locality:</strong> ${locality}<br>
+                                <strong>Address:</strong> ${address}<br>
+                                <strong>City:</strong> ${city}<br>
+                                <strong>State:</strong> ${state}<br>
+                            </div>
+                        </div>
+                    </div>`;
+
+        // Append the new address to the container
+        $('#addressesContainer').append(newAddressHtml);
+
+        // Increment the address count
+        addressCount++;
+
+        // Clear the form fields
+        $('#addAddressForm')[0].reset();
+
+        // Close the modal
+        $('#addAddressModal').modal('hide');
+      });
+    });
+  </script>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+  crossorigin="anonymous"></script>
+
+{% endblock %}
+

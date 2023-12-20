@@ -1,0 +1,102 @@
+
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container-fluid {
+      padding-right: 0;
+      padding-left: 0;
+    }
+
+    #profile-card {
+      width: 25vw;
+      margin-top: 0px;
+      margin-bottom: 20px;
+      border: 1px solid grey;
+      border-radius: 5px;
+      padding: 10px;
+      background-color: #9EA3AD;
+      position: absolute;
+    }
+
+    .DxGiT2 {
+      margin-left: 15px;
+    }
+
+    .profile-card img {
+      height: 40px;
+      width: 54px;
+    }
+
+    #sidebar {
+      margin-top: 90px;
+      width: 25vw;
+      height: 80vh;
+      color: black;
+      border-radius: 10px;
+      background-color: #9EA3AD;
+      padding-top: 20px;
+      position: absolute;
+    }
+
+    #sidebar a {
+      color: black;
+      margin-top: 1rem;
+      border-bottom: 1px solid black;
+      text-decoration: none;
+    }
+
+    #sidebar a:hover {
+      background-color: lightgrey;
+    }
+
+    nav li {
+      margin-top: 15px;
+    }
+
+    .icon {
+      margin-right: 15px;
+    }
+
+    #logout-btn {
+      margin-top: 1rem;
+      width: 90%;
+    }
+
+    main {
+      margin-left: 26vw;
+      margin-top: 15px;
+      padding: 20px;
+      height: 100vh;
+    }
+
+    #user-profile {
+      margin-top: 30px;
+      height: 100vh;
+    }
+
+    #user-profile h2 {
+      margin-bottom: 20px;
+    }
+
+    .user-details {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .user-details label {
+      font-weight: bold;
+    }
+
+    .address-card {
+      margin-bottom: 20px;
+    }
+
+    .add-address-btn {
+      margin-top: 20px;
+    }

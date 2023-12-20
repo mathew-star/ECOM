@@ -4,6 +4,7 @@ from django.core.validators import FileExtensionValidator
 from django import forms
 from django.forms import inlineformset_factory
 from myadmin.models import Products,ProductImages
+from .models import CustomUser
 from django.apps import apps
 Category = apps.get_model('myadmin', 'Category')
 
@@ -73,3 +74,4 @@ class CategoryForm(forms.ModelForm):
 #         return price
 
 # ProductImageFormSet = inlineformset_factory(Products, ProductImages, fields=['image'], extra=1)
+

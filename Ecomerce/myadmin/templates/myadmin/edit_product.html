@@ -26,7 +26,12 @@
       <label for="price" class="form-label">Price:</label>
       <input type="text" class="form-control" id="price" name="price" value="{{ product.price }}" required>
     </div>
+
     <div class="mb-3">
+      <label for="price" class="form-label">Stock</label>
+      <input type="number" class="form-control" id="price" name="price" value="{{ product.stock }}" required>
+    </div>
+    {% comment %} <div class="mb-3">
       <label for="rating" class="form-label">Rating:</label>
       <select class="form-select" id="rating" name="rating" required>
         <option value="1" {% if product.rating == 1 %}selected{% endif %}>4.1</option>
@@ -35,8 +40,8 @@
         <option value="4" {% if product.rating == 4 %}selected{% endif %}>4.4</option>
         <option value="5" {% if product.rating == 5 %}selected{% endif %}>5</option>
       </select>
-    </div>
-    <div class="mb-3">
+    </div> {% endcomment %}
+    {% comment %} <div class="mb-3">
       <label for="star" class="form-label">Star:</label>
       <select class="form-select" id="star" name="star" required>
         <option value="1" {% if product.star == 1 %}selected{% endif %}>1 star</option>
@@ -45,7 +50,7 @@
         <option value="4" {% if product.star == 4 %}selected{% endif %}>4 stars</option>
         <option value="5" {% if product.star == 5 %}selected{% endif %}>5 stars</option>
       </select>
-    </div>
+    </div> {% endcomment %}
     
     <div id="image-inputs">
       {% for img in product.image.all %}
