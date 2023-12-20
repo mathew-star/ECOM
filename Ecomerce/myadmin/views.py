@@ -177,10 +177,9 @@ def add_product(request):
         description = request.POST.get('description')
         category_id = request.POST.get('category')
         price = request.POST.get('price')
-        rating = request.POST.get('rating')
-        star = request.POST.get('star')
+        stock = request.POST.get('stock')
 
-        if name and description and category_id and price and rating and star:
+        if name and description and category_id and price and stock:
             category = Category.objects.get(id=category_id)
 
             product = Products.objects.create(
@@ -188,8 +187,7 @@ def add_product(request):
                 description=description,
                 category=category,
                 price=price,
-                rating=rating,
-                star=star
+                stock=stock,
             )
 
             for i in range(1, 5):

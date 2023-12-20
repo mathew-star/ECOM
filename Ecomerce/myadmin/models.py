@@ -26,24 +26,7 @@ class Products(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_listed = models.BooleanField(default=True)
-    # New fields
-    RATING_CHOICES = [
-        (1, '4.1'),
-        (2, '4.2'),
-        (3, '4.3'),
-        (4, '4.4'),
-        (5, '5'),
-    ]
-    rating = models.IntegerField(choices=RATING_CHOICES)
-    
-    STAR_CHOICES = [
-        (1, '1 star'),
-        (2, '2 stars'),
-        (3, '3 stars'),
-        (4, '4 stars'),
-        (5, '5 stars'),
-    ]
-    star = models.IntegerField(choices=STAR_CHOICES)
+    stock = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name

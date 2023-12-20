@@ -49,28 +49,27 @@ class CategoryForm(forms.ModelForm):
        return is_listed
     
 
+# class ProductForm(forms.ModelForm):
+#     class Meta:
+#         model = Products
+#         fields = ['name', 'description', 'category', 'price', 'is_listed', 'rating', 'star']
 
-class ProductForm(forms.ModelForm):
-    class Meta:
-        model = Products
-        fields = ['name', 'description', 'category', 'price', 'is_listed', 'rating', 'star']
+#     def clean_name(self):
+#         name = self.cleaned_data.get('name')
+#         if len(name)<3:
+#             raise forms.ValidationError('Name must be at least 3 characters long.')
+#         return name
 
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-        if len(name)<3:
-            raise forms.ValidationError('Name must be at least 3 characters long.')
-        return name
+#     def clean_description(self):
+#         description = self.cleaned_data.get('description')
+#         if len(description) < 10:
+#             raise forms.ValidationError('Description must be at least 10 characters long.')
+#         return description
 
-    def clean_description(self):
-        description = self.cleaned_data.get('description')
-        if len(description) < 10:
-            raise forms.ValidationError('Description must be at least 10 characters long.')
-        return description
+#     def clean_price(self):
+#         price = self.cleaned_data.get('price')
+#         if price <= 0:
+#             raise forms.ValidationError('Price must be greater than zero.')
+#         return price
 
-    def clean_price(self):
-        price = self.cleaned_data.get('price')
-        if price <= 0:
-            raise forms.ValidationError('Price must be greater than zero.')
-        return price
-
-ProductImageFormSet = inlineformset_factory(Products, ProductImages, fields=['image'], extra=1)
+# ProductImageFormSet = inlineformset_factory(Products, ProductImages, fields=['image'], extra=1)
