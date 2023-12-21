@@ -9,6 +9,14 @@
 {% block main %}
 
 <div class="container-fluid">
+  {% for message in messages %}
+  <div class="alert alert-info alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+ {% endfor %}
+
+
 
     <div class="col-md-4 d-flex " id="profile-card">
     <i class="fa-solid fa-circle-user fa-2xl" style="color: #000000; margin-top: 20px; margin-left: 8px; "></i>
@@ -101,62 +109,39 @@
 
         <div class="col-md-12 mt-4">
           <h4>Addresses:</h4>
+<!-- Display user addresses in a grid -->
+{% if address %}
+<div class="row row-cols-1 row-cols-md-2 g-3" id="addressesContainer">
+  {% for addres in address %}
+  <div class="col-md-6 address-card">
+    <div class="card" style="border-radius: 10px;">
+      <div class="card-body">
+        <a href="{% url 'edit_address' address_id=addres.id %}" style="float: right;"><i class="fas fa-edit"></i></a>
+        <strong>Address 1:</strong><br>
+        
+        Name: {{ addres.name }}<br>
+        Phone: {{ addres.phone }}<br>
+        Pincode: {{ addres.pincode }}<br>
+        Locality: {{ addres.locality }}<br>
+        Address: {{ addres.address }}<br>
+        City/District/Town: {{ addres.city }}<br>
+        State: {{ addres.state }}<br>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>You have no saved addresses. Add..!</p>
+{% endif %}
 
-          <!-- Display user addresses in a grid -->
-          {% if addresses %}
-          <div class="row row-cols-1 row-cols-md-2 g-3" id="addressesContainer">
-            {% for address in addresses %}
-            <div class="col-md-6 address-card">
-              <div class="card" style="border-radius: 10px;">
-                <div class="card-body">
-                  <a href="" style="float: right;"><i class="fas fa-edit"></i></a>
-                  <strong>Address 1:</strong><br>
-                  
-                  Name: {{address.name}}<br>
-                  Phone: {{address.phone_number}}<br>
-                  Pincode: {{address.pincode}}<br>
-                  Locality:{{address.locality}}<br>
-                  Address: {{address.address}}<br>
-                  City/District/Town: {{address.city}}<br>
-                  State:{{address.state}}<br>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-
-          </div>
-          {% else %}
-          <p>You have no saved addresses. Add..!</p>
-          {% endif %}
 
           <!-- Add Address Button -->
-          <button class="btn btn-primary mt-5 add-address-btn" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+          <a href="{% url "add_address" %}">
             <i class="fas fa-plus me-2"></i>Add Address
-          </button>
+          </a>
 
           <!-- Add Address Modal -->
-          <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="addAddressModalLabel">Add Address</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <!-- Add Address Form -->
-                  <form id="addAddressForm" method="post" action="{% url "add_address" %}">
-                    <!-- Add form fields here -->
-                    {% csrf_token %}
-                    {{ form.as_p }}
-
-                    <button type="submit" class="btn btn-primary" >Add Address</button>
-                </form>
-                
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </main>

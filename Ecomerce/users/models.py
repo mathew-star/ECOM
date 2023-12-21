@@ -3,7 +3,7 @@ from accounts.models import CustomUser
 class Address(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    phone = models.IntegerField(null=True,default=0)
+    phone = models.CharField(max_length=15, default='')
     pincode = models.CharField(max_length=7)
     locality = models.CharField(max_length=255)
     address = models.TextField()
