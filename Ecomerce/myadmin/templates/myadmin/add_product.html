@@ -2,82 +2,172 @@
 {% extends 'myadmin/adminbase.html' %}
 
 {% block main %}
-  <div class="container mt-5">
-    <h1 class="mb-4">Add Product</h1>
-
-    <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-      {% csrf_token %}
-      <div class="mb-3">
-        <label for="name" class="form-label">Name:</label>
-        <input type="text" class="form-control" id="name" name="name" required>
+  <form enctype="multipart/form-data" class="container" method="post" id="product_form">
+    {% csrf_token %}
+    
+    <!-- Product Form Section -->
+    <div class="card">
+      <div class="card-header card-header-secondary">
+        <h4 class="card-title">Add Product</h4>
       </div>
-      <div class="mb-3">
-        <label for="description" class="form-label">Description:</label>
-        <textarea class="form-control" id="description" name="description" required></textarea>
-      </div>
-      <div class="mb-3">
-        <label for="category" class="form-label">Category:</label>
-        <select class="form-select" id="category" name="category" required>
-          {% for category in categories %}
-            <option value="{{ category.id }}">{{ category.name }}</option>
+      {% for field in product_form %}
+        <div class="form-group card-body">
+          <label>{{ field.label }}</label>
+          {% if field.field.required %}
+            <span style="color: red;" class="required">*</span>
+          {% endif %}
+          {{ field }}
+          {% if field.help_text %}
+            <small style="color: grey">{{ field.help_text }}</small>
+          {% endif %}
+          {% for error in field.errors %}
+            <p style="color: red">{{ error }}</p>
           {% endfor %}
-        </select>
-      </div>
-      <div class="mb-3">
-        <label for="price" class="form-label">Price:</label>
-        <input type="text" class="form-control" id="price" name="price" pattern="[0-9]+" title="Please enter a valid number" required>
-        <div id="price-error" class="text-danger"></div>
-      </div>
-
-      <div class="mb-3">
-        <label for="stock" class="form-label">Stock</label>
-        <input type="number" class="form-control" id="price" name="stock" pattern="[0-9]+" title="Please enter a valid number" required>
-        <div id="price-error" class="text-danger"></div>
-      </div>
-
-      <div id="image-inputs">
-        <!-- Initial image input -->
-        <div class="mb-3">
-          <label for="image1" class="form-label">Image 1:</label>
-          <input type="file" class="form-control" id="image1" name="image1" accept="image/*" required>
         </div>
+      {% endfor %}
+    </div>
+
+    <!-- Color and Variant Form Section -->
+    <div class="card mt-4">
+      <div class="card-header card-header-secondary">
+        <h4 class="card-title">Add Variants</h4>
       </div>
+      <div class="form-group card-body">
+        <label for="id_color">Color <span style="color: red;" class="required">*</span></label>
+        {{ color_form }}
+      </div>
+      <table class="table card-body">
+    <!-- Table headers -->
+    <thead class="text-secondary">
+        <th>Size</th>
+        <th>Quantity</th>
+        <th>Price</th>
+    </thead>
+    <tbody id="item-variants">
+        <!-- Variant formset goes here -->
+        {{ variant_formset.management_form }}
+        {{ variant_formset.non_form_errors }}
+        {% for form in variant_formset %}
+            {{ form.id }}
+            <tr>
+                <td>{{ form.size.label_tag }}</td>
+                <td>{{ form.quantity }}</td>
+                <td>{{ form.price }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<button type="button" class="btn btn-success" id="add-row">Add Row</button>
 
-      <button type="button" class="btn btn-success" id="add-image">Add Image</button>
-      <button type="submit" class="btn btn-primary">Add Product</button>
-    </form>
+    </div>
 
-    <a href="{% url 'product_list' %}" class="btn btn-secondary mt-3">Back to Product List</a>
-  </div>
+    <!-- Image Form Section -->
+    <div class="card mt-4">
+      <div class="card-header card-header-secondary">
+        <h4 class="card-title">Add Images</h4>
+      </div>
+      <table class="table card-body">
+        <!-- Table headers -->
+        <thead class="text-secondary">
+          <th>Image <span style="color: red;" class="required">*</span></th>
+          <th>Delete?</th>
+          <th>Add More</th>
+        </thead>
+        <tbody id="item-images">
+          <!-- Image formset goes here -->
+          {{ image_formset.management_form }}
+          {{ image_formset.non_form_errors }}
+          {% for form in image_formset %}
+            {{ form.id }}
+            <tr>
+              <td>{{ form.image }}</td>
+              <td>
+                {% if form.instance.pk %}
+                  <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteImageModal{{form.instance.pk}}">
+                    Delete
+                  </button>
+                  <!-- Modal goes here -->
+                {% endif %}
+              </td>
+              <td><a href="#" class="btn btn-secondary add-more-images">Add More</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
+    <div id="image-inputs">
+      <!-- Initial image input -->
+      <div class="mb-3">
+        <label for="image1" class="form-label">Image 1:</label>
+        <input type="file" class="form-control" id="image1" name="image1" accept="image/*" required>
+      </div>
+    </div>
+    <button type="button" class="btn btn-success" id="add-image">Add Image</button>
+
+    <!-- Submit Button -->
+    <div class="form-group mt-4">
+      <button type="submit" class="btn btn-secondary btn-block">Submit</button>
+    </div>
+
+  </form>
+
+  <!-- JavaScript for adding more images -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></script>
   <script>
-    function validateForm() {
-      // Validate price as a number
-      var price = document.getElementById('price').value;
-      if (isNaN(price)) {
-        document.getElementById('price-error').innerText = 'Please enter a valid number for price.';
-        return false;
-      } else {
-        document.getElementById('price-error').innerText = '';
-      }
-
-      // Add additional validation if needed
-
-      return true;  // Form is valid
-    }
 
     $(document).ready(function() {
-      $("#add-image").click(function() {
-        var formCount = $("#image-inputs input[type='file']").length + 1;
-        var newInput = $(
-          '<div class="mb-3">' +
-          '<label for="image' + formCount + '" class="form-label">Image ' + formCount + ':</label>' +
-          '<input type="file" class="form-control" id="image' + formCount + '" name="image' + formCount + '" required>' +
-          '</div>'
-        );
+      $("#add-row").click(function() {
+          var formCount = $("#item-variants tr").length + 1;
+          var newRow = $(
+              '<tr>' +
+              '<td><input type="text" name="quantity_' + formCount + '"></td>' +
+              '<td><input type="text" name="price_' + formCount + '"></td>' +
+              '</tr>'
+          );
 
-        $("#image-inputs").append(newInput);
+          $("#item-variants").append(newRow);
       });
+  });
+
+    {% comment %} $(document).ready(function() {
+      function addMoreItems(itemType) {
+          var count = $(`#item-${itemType} tr`).length;
+          var template = $(`#${itemType}-template`).html();
+
+          if (template) {
+              template = template.replace(/__prefix__/g, count);
+              $(`#item-${itemType}`).append(template);
+          } else {
+              console.error(`Template for ${itemType} not found`);
+          }
+      }
+
+      // Add more variants
+      $('#item-variants').on('click', '.add-more-variants', function(ev) {
+          ev.preventDefault();
+          addMoreItems('variants');
+      });
+
+      // Add more images
+      $('#item-images').on('click', '.add-more-images', function(ev) {
+          ev.preventDefault();
+          addMoreItems('images');
+      });
+  }); {% endcomment %}
+
+  $(document).ready(function() {
+    $("#add-image").click(function() {
+      var formCount = $("#image-inputs input[type='file']").length + 1;
+      var newInput = $(
+        '<div class="mb-3">' +
+        '<label for="image' + formCount + '" class="form-label">Image ' + formCount + ':</label>' +
+        '<input type="file" class="form-control" id="image' + formCount + '" name="image' + formCount + '" required>' +
+        '</div>'
+      );
+
+      $("#image-inputs").append(newInput);
     });
+  });
   </script>
-{% endblock %}
+{% endblock  %}

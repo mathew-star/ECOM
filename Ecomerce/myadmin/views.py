@@ -5,9 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from accounts.models import CustomUser
-from myadmin.models import BlockedUser,Products,ProductImages
+from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color, Size
 from django.shortcuts import render, get_object_or_404, redirect
-from myadmin.forms import CategoryForm
+from django.forms import inlineformset_factory
+from myadmin.forms import CategoryForm,ProductForm, ColorForm, VariantFormSet, ImageFormSet
+
 
 from django.apps import apps
 Category = apps.get_model('myadmin', 'Category')
@@ -130,6 +132,8 @@ def add_category(request):
 
 
 
+
+
 def edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     
@@ -158,7 +162,7 @@ def toggle_category_listing(request, category_id):
 
 
 def toggle_product_listing(request, category_id):
-    p = Products.objects.get(id=category_id)
+    p = MyProducts.objects.get(id=category_id)
     p.is_listed = not p.is_listed
     p.save()
     return redirect('product_list')
@@ -167,43 +171,13 @@ def toggle_product_listing(request, category_id):
 def product_list(request):
     if request.user.is_superuser == False:
         return redirect( 'home')
-    products = Products.objects.all()
+    products = MyProducts.objects.all()
     return render(request, 'myadmin/product_list.html', {'products': products})
-
-def add_product(request):
-    categories = Category.objects.all()
-
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description')
-        category_id = request.POST.get('category')
-        price = request.POST.get('price')
-        stock = request.POST.get('stock')
-
-        if name and description and category_id and price and stock:
-            category = Category.objects.get(id=category_id)
-
-            product = Products.objects.create(
-                name=name,
-                description=description,
-                category=category,
-                price=price,
-                stock=stock,
-            )
-
-            for i in range(1, 5):
-                image = request.FILES.get(f'image{i}')
-                if image:
-                    ProductImages.objects.create(product=product, image=image)
-
-            return redirect('product_list')
-
-    return render(request, 'myadmin/add_product.html', {'categories': categories})
 
 
 def edit_product(request, product_id):
     categories = Category.objects.all()
-    product = Products.objects.get(id=product_id)
+    product = MyProducts.objects.get(id=product_id)
 
     if request.method == 'POST':
         print("in edit")
@@ -223,7 +197,45 @@ def edit_product(request, product_id):
     return render(request, 'myadmin/edit_product.html', {'categories': categories, 'product': product})
 
 def delete_product(request, product_id):
-    product = get_object_or_404(Products, id=product_id)
+    product = get_object_or_404(MyProducts, id=product_id)
     product.delete()
     return redirect('product_list')
 
+def add_product(request):
+    if request.method == 'POST':
+        product_form = ProductForm(request.POST)
+        color_form = ColorForm(request.POST, prefix='color')
+        variant_formset = VariantFormSet(request.POST, prefix='variant')
+        image_formset = ImageFormSet(request.POST, request.FILES, prefix='image')
+
+        if all([product_form.is_valid(), color_form.is_valid(), variant_formset.is_valid(), image_formset.is_valid()]):
+            product = product_form.save()
+            color = color_form.save(commit=False)
+            color.save()
+
+            variants = variant_formset.save(commit=False)
+            for variant in variants:
+                variant.product_id_id = product
+                variant.color = color
+                variant.size = variant.cleaned_data['size']
+                variant.save()
+
+            images = image_formset.save(commit=False)
+            for image in images:
+                image.color_id = color
+                image.product = color
+                image.save()
+
+            return redirect('product_list')  # You can redirect to a success page
+    else:
+        product_form = ProductForm()
+        color_form = ColorForm(prefix='color')
+        variant_formset = VariantFormSet(prefix='variant')
+        image_formset = ImageFormSet(prefix='image')
+
+    return render(request, 'myadmin/add_product.html', {
+        'product_form': product_form,
+        'color_form': color_form,
+        'variant_formset': variant_formset,
+        'image_formset': image_formset,
+    })

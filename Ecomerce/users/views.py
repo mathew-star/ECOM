@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
-from myadmin.models import Category,ProductImages,Products
+from myadmin.models import Category,ProductImages,MyProducts
 from users.models import Address
 from accounts.models import CustomUser
 from django.contrib import messages
@@ -10,14 +10,14 @@ from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 
 def single_product(request,product_id):
-    product = get_object_or_404(Products, pk=product_id)
+    product = get_object_or_404(MyProducts, pk=product_id)
 
     return render(request, 'users/singleproduct.html', {'product': product})
 def shop(request):
     if request.user.is_authenticated == False:
         return redirect('signup')
     
-    products= Products.objects.all()
+    products= MyProducts.objects.all()
     images= ProductImages.objects.all()
     return render(request,'users/shop.html',{'products':products,'images':images})
 

@@ -1,6 +1,7 @@
 
 from django.db import models
 from accounts.models import CustomUser
+from colorfield.fields import ColorField
 class BlockedUser(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='blocked_user')
 
@@ -11,26 +12,53 @@ class BlockedUser(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    image = models.ImageField(upload_to='category/',blank=True)
+    image = models.ImageField(upload_to='category/', blank=True)
     is_listed = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
 
+class Size(models.Model):
+    SIZE_CHOICES = [
+        (6, 'Size 6'),
+        (7, 'Size 7'),
+        (8, 'Size 8'),
+        (9, 'Size 9'),
+        
+    ]
+    size = models.IntegerField(choices=SIZE_CHOICES, unique=True)
 
+    def __str__(self):
+        return str(self.size)
 
-    
-class Products(models.Model):
+class Color(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+class MyProducts(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    category= models.ForeignKey(Category, on_delete=models.CASCADE)  # Match the existing SQL column name
     is_listed = models.BooleanField(default=True)
-    stock = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
 
+class Variant(models.Model):
+    color = models.ForeignKey(Color, on_delete=models.CASCADE)
+    size = models.ForeignKey(Size, on_delete=models.CASCADE)  
+    product_id = models.ForeignKey(MyProducts, on_delete=models.CASCADE, default=None)
+    quantity = models.IntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
 class ProductImages(models.Model):
-    image= models.ImageField(upload_to='product_images/')
-    product = models.ForeignKey(Products, on_delete=models.CASCADE,related_name='image')
+    image = models.ImageField(upload_to='product_images/')
+    product = models.ForeignKey(MyProducts, on_delete=models.CASCADE, default=None)
+    color = models.ForeignKey(Color, on_delete=models.CASCADE, related_name='images', null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.color.name}"
+
+
+

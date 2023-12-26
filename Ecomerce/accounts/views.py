@@ -8,7 +8,7 @@ from django.contrib.auth import login as auth_login,authenticate,logout as auth_
 from accounts.form import CustomUserCreationForm
 from accounts.models import CustomUser
 from myadmin.models import BlockedUser
-from myadmin.models import Category,Products,ProductImages
+from myadmin.models import Category,MyProducts,ProductImages
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -214,10 +214,11 @@ def resend_otp(request, user_id):
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
+    return render(request,'users/userhome.html')
     
-    categories= Category.objects.all()
-    products= Products.objects.all()
-    images= ProductImages.objects.all()
-    return render(request,'users/userhome.html',{'categories': categories,'products':products,'images':images})
+    # categories= Category.objects.all()
+    # products= MyProducts.objects.all()
+    # images= ProductImages.objects.all()
+    # return render(request,'users/userhome.html',{'categories': categories,'products':products,'images':images})
 
     
