@@ -100,6 +100,7 @@ class VariantForm(forms.ModelForm):
         widgets = {
             'size': forms.Select(attrs={'class': 'form-control'})
         }
+
     size = forms.ModelChoiceField(queryset=Size.objects.all())
 
 class ImageForm(forms.ModelForm):

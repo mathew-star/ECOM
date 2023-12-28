@@ -124,14 +124,14 @@ otpBoxes.forEach((box, index) => {
           if (otpBoxes[index + 1]) {
               otpBoxes[index + 1].focus();
           } else {
-              // Show the submit button when the last digit is entered
+
               submitBtn.style.display = 'block';
           }
       }
   });
 });
 
-// Start the countdown timer
+
 let countdownInterval = setInterval(() => {
   countdown--;
   timer.textContent = countdown;

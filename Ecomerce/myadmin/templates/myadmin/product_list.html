@@ -36,7 +36,9 @@
         {% endfor %}
       </tbody>
     </table>
-
+{% for s in size %}
+<p> {{s.size}} </p>
+{% endfor %}
     <a href="{% url 'add_product' %}" class="btn btn-success">Add Product</a>
   </div>
 {% endblock %}
