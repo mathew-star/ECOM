@@ -3,24 +3,87 @@
 {% load static %}
 
 
+{% block css %}
 
+<style>
+  .product-img {
+     height: 30rem;
+     object-fit: cover;
+  }
+  
+  .product-title {
+     font-size: 2em;
+     color: #333;
+  }
+  
+  .product-description {
+     font-size: 1.2em;
+     color: #666;
+  }
+  
+  .product-price {
+     font-size: 1.5em;
+     color: #ff6347; /* Tomato color */
+  }
+
+  .out-of-stock {
+    color: #ff6347; /* Red color for out of stock */
+  }
+
+  .in-stock {
+    color: green; /* Green color for in stock */
+  }
+  .quantity {
+    width: 150px;
+    margin: 0 auto;
+    display: flex;
+    float: left;
+    margin-right: 3rem;
+  }
+
+  .quantity input {
+    width: 90%;
+    font-size: 15px;
+    padding: 10px;
+    border: none;
+    background-color: #A7A9BA;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  .quantity button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    background-color: #f1f1f1;
+    border: none;
+    cursor: pointer;
+  }
+
+  .quantity-minus {
+    border-radius: 5px 0 0 5px;
+  }
+
+  .quantity-plus {
+    border-radius: 0 5px 5px 0;
+  }
+  </style>
+{% endblock %}
 
 {% block main %}
 
 
-<div class="container">
+<div class="container py-5">
     <div class="row">
       <div class="col-md-6">
         <!-- Carousel for product images -->
         <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
           <div class="carousel-inner">
-                {% for img in product.image.all %}
-            
-              <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                  <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">
-              </div>
-              {% endfor %}
-
+            {% for img in images %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <img src="{{ img.image.url }}" alt="{{ product.name }}" class="d-block w-100 product-img" >
+                </div>
+            {% endfor %}
           </div>
           <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -34,14 +97,35 @@
       </div>
       <div class="col-md-6">
         <!-- Product details -->
-        <h1>{{ product.name }}</h1>
-        <p>{{ product.description }}</p>
-        <p>Price: ${{ product.price }}</p>
-        <p>Rating: {{ product.get_rating_display }}</p>
-        <p>Star: {{ product.get_star_display }}</p>
+        <h1 class="mb-4 product-title">{{ product.name }}</h1>
+        <p class="mb-4 product-description">{{ product.description }}</p>
+        <p class="mb-4 product-price" id="productPrice">Price: {{ variant.price }} Rs</p>
+
+        <label for="colorSelect" class="mb-2">Select Color:</label>
+        <select id="colorSelect" onchange="updateProductDetails()"  name="colorSelect" class="form-select mb-4">
+            {% for variant in product.variant_set.all %}
+                <option  class="color" id="{{variant.color.id}}" value="{{ variant.color.name }}" {% if forloop.first %}selected{% endif %}>{{ variant.color.name }}</option>
+            {% endfor %}
+        </select>
+
+
+        <div class="quantity">
+          <button class="quantity-minus" onclick="decreaseQuantity();updateStockStatus();">-</button>
+          <input type="number" id="quantity" min="1" max="100" value="1" oninput="updateStockStatus()" >
+          <button class="quantity-plus" onclick="increaseQuantity();updateStockStatus();">+</button>
+        </div>
+
+         <p class="stock-status" style="font-size: x-large;">
+          {% if variant.quantity < 2 %}
+            Out of Stock !
+          {% else %}
+            In Stock
+          {% endif %}
+         </p>
+
         <!-- Buttons -->
-        <button class="btn btn-primary">Add to Cart</button>
-        <button class="btn btn-secondary">Buy Now</button>
+        <button class="btn mt-5" style="background-color: #A7A9BA;">Add to Cart</button>
+        <button class="btn btn-secondary mt-5">Buy Now</button>
       </div>
     </div>
    </div>
@@ -49,9 +133,123 @@
 {% endblock %}
 
 
-
-
+ 
 {% block script %}
+
+
+<script>
+  function increaseQuantity() {
+    var value = parseInt(document.getElementById('quantity').value, 10);
+    value = isNaN(value) ? 0 : value;
+    if (value < 100) {
+      value++;
+      document.getElementById('quantity').value = value;
+    }
+  }
+
+  function decreaseQuantity() {
+    var value = parseInt(document.getElementById('quantity').value, 10);
+    value = isNaN(value) ? 0 : value;
+    if (value > 1) {
+      value--;
+      document.getElementById('quantity').value = value;
+    }
+  }
+
+
+  
+
+    function updateProductDetails() {
+      // Get the selected color
+      var colorSelect = document.getElementById("colorSelect");
+      var selectedOption = colorSelect.options[colorSelect.selectedIndex];
+      var colorid = selectedOption.getAttribute("id"); 
+      console.log(colorid);
+  
+      // Fetch product details based on the selected color
+      fetch(`/get_product_details/${colorid}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(data);
+          console.log(data.variant.price)
+          // Update product images
+          const carouselInner = document.querySelector('#productCarousel .carousel-inner');
+          carouselInner.innerHTML = '';
+        
+          data.images.forEach((img,i) => {
+            const carouselItem = document.createElement('div');
+            carouselItem.className = 'carousel-item';
+            if(i==0){
+              carouselItem.classList.add('active')
+            }
+      
+            const imgElement = document.createElement('img');
+            imgElement.src =img.image;
+            imgElement.className = 'd-block w-100 product-img';
+            carouselItem.appendChild(imgElement);
+            carouselInner.appendChild(carouselItem);
+          });
+  
+          // Update product details
+          const productPrice = document.querySelector('#productPrice');
+          const productStock = document.querySelector('.product-stock'); // Update this selector based on your HTML structure
+  
+          productPrice.textContent = `Price: ${data.variant.price} Rs`;
+  
+          if (data.variant.quantity < 2) {
+            productStock.textContent = 'Out of Stock!';
+            productStock.classList.add('out-of-stock');
+            productStock.classList.remove('in-stock');
+          } else {
+            productStock.textContent = 'In Stock';
+            productStock.classList.add('in-stock');
+            productStock.classList.remove('out-of-stock');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching product details:', error);
+          // Handle the error as needed, e.g., display an error message to the user
+        });
+    }
+  
+ 
+
+    function updateStockStatus() {
+      var colorSelect = document.getElementById("colorSelect");
+      var selectedOption = colorSelect.options[colorSelect.selectedIndex];
+      var colorId = selectedOption.getAttribute("id");
+      var quantity = document.getElementById("quantity").value;
+      console.log(colorId, quantity)
+
+      fetch(`/get_stock_status/?colorid=${colorId}&quantity=${quantity}`)
+        .then(response => response.json())
+        .then(data => {
+
+          const stockStatus = document.querySelector('.stock-status');
+          if (data.outOfStock) {
+            stockStatus.textContent = 'Out of Stock!';
+            stockStatus.classList.add('out-of-stock');
+            stockStatus.classList.remove('in-stock');
+          } else {
+            stockStatus.textContent = 'In Stock';
+            stockStatus.classList.add('in-stock');
+            stockStatus.classList.remove('out-of-stock');
+          }
+        })
+        .catch(error => {
+          console.error('Error updating stock status:', error);
+        });
+    }
+
+
+  
+
+</script>
 
 
 {% endblock %}

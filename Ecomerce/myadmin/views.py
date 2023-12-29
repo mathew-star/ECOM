@@ -5,10 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from accounts.models import CustomUser
-from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color, Size
+from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color
 from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
-from myadmin.forms import CategoryForm,ProductForm, ColorForm, VariantFormSet, ImageFormSet
+from myadmin.forms import CategoryForm
 
 
 from django.apps import apps
@@ -172,11 +172,9 @@ def product_list(request):
     
     if request.user.is_superuser == False:
         return redirect( 'home')
-    size=Size.objects.all()
     products = MyProducts.objects.all()
-    size= Size.objects.all()
-    context={'products': products,
-             'size': size
+    context={'products': products
+            
     }
     return render(request, 'myadmin/product_list.html', context)
 
@@ -184,8 +182,11 @@ def product_list(request):
 def edit_product(request, product_id):
     categories = Category.objects.all()
     product = MyProducts.objects.get(id=product_id)
-    v=Variant.objects.get(product_id_id=product_id)
-    print(v.size)
+    color= Variant.objects.filter(product_id=product_id).values('color__name')
+    p_colors=[]
+    for i in color:
+        for k,v in i.items():
+            p_colors.append(v)
 
     if request.method == 'POST':
         print("in edit")
@@ -193,7 +194,7 @@ def edit_product(request, product_id):
         product.description = request.POST['description']
         product.category = Category.objects.get(id=request.POST['category'])
         product.save()
-
+        
         for i in range(1, 5):
             image = request.FILES.get(f'image{i}')
             if image:
@@ -201,7 +202,43 @@ def edit_product(request, product_id):
 
         return redirect('product_list')
 
-    return render(request, 'myadmin/edit_product.html', {'categories': categories, 'product': product})
+    return render(request, 'myadmin/edit_product.html', {'categories': categories, 'product': product,'color':p_colors})
+
+
+def add_variant(request, product_id):
+    product = MyProducts.objects.get(id=product_id)
+
+    color= Variant.objects.filter(product_id=product_id).values('color__name')
+    p_colors=[]
+    for i in color:
+        for k,v in i.items():
+            p_colors.append(v)
+
+    context={'product': product,
+             'color':p_colors
+    }
+    if request.method == "POST":
+        color_name = request.POST.get('color')
+        quantity = request.POST.get('quantity')
+        price = request.POST.get('price')
+        is_listed = request.POST.get('is_listed') == 'on'
+
+        color= Color.objects.create(name=color_name)
+
+        variant = Variant(color=color, product_id=product, quantity=quantity, price=price, is_listed=is_listed)
+        variant.save()
+        for i in range(1, 5):
+                image = request.FILES.get(f'image{i}')
+                if image:
+                    ProductImages.objects.create(product=product, color=color, image=image)
+
+        return redirect('product_list')
+
+
+    return render(request, "myadmin/add_variants.html",context)
+
+
+
 
 def delete_product(request, product_id):
     product = get_object_or_404(MyProducts, id=product_id)
@@ -213,47 +250,27 @@ def add_product(request):
         product_name = request.POST.get('name')
         product_description = request.POST.get('description')
         product_category = request.POST.get('category')
-        v_color = request.POST.get('color')
-        color = Color.objects.create(name=v_color)
-        print(color.id)
+
+        color_name = request.POST.get('color')
+        quantity = request.POST.get('quantity')
+        price = request.POST.get('price')
+        is_listed = request.POST.get('is_listed') == 'on'
+
         product = MyProducts(name=product_name, description=product_description, category_id=product_category)
         product.save()
-        print( product_name,    v_color  )
-       # Get the variants and images from the form
-        
 
-        variants = []
-       
-        
-        for i in range(4):
-            try:
-                size_id = request.POST.get(f'size-{i}') 
-                quantity = request.POST.get(f'variant-{i}-quantity')
-                price = request.POST.get(f'variant-{i}-price')
-                print("variants", size_id, quantity)
+        color= Color.objects.create(name=color_name)
 
-                if quantity is not None:
-                    size_instance = Size.objects.get(id=size_id)
-                    variants.append((size_instance.id, quantity, price))
-
-            except Exception as e:
-                print("Exception in variants loop:", e)
-                break
+        variant = Variant(color=color, product_id=product, quantity=quantity, price=price, is_listed=is_listed)
+        variant.save()
 
         for i in range(1, 5):
                 image = request.FILES.get(f'image{i}')
                 if image:
-                    ProductImages.objects.create(product=product, color_id=color.id, image=image)
-
-        for variant in variants:
-                size_id, quantity, price = variant
-                print("In for var", size_id, quantity, price)
-                variant_obj = Variant(color_id=color.id, size_id=size_id, product_id=product, quantity=quantity, price=price)
-                variant_obj.save()
+                    ProductImages.objects.create(product=product, color=color, image=image)
 
         return redirect('product_list')
     else:
         # Render the form for GET requests
         categories = Category.objects.all()
-        sizes = Size.objects.all()
-        return render(request, 'myadmin/add_product.html', {'categories': categories, 'sizes': sizes})
+        return render(request, 'myadmin/add_product.html', {'categories': categories})

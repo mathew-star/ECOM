@@ -29,36 +29,28 @@
       </select>
     </div>
     
-    <div class="mb-3">
-      <label for="color" class="form-label"> Color </label>
-      <input type="text" class="form-control" id="color" name="color" required>
-    </div>
-    
-    
     
         <!-- Variant Form Section -->
         <div class="card mt-4">
           <div class="card-header card-header-secondary">
-              <h4 class="card-title">Add Variants</h4>
+              <h4 class="card-title">Add Variant</h4>
           </div>
       
           <div id="variant-inputs">
             <!-- Initial variant input -->
             <div class="mb-3">
-                <label for="size0" class="form-label">Size:</label>
-                <select class="form-select" id="size0" name="size-0" required>
-                    {% for s in sizes %}
-                        <option value="{{ s.id }}">{{ s.size }}</option>
-                    {% endfor %}
-                </select>
-                <label for="quantity0" class="form-label">Quantity:</label>
-                <input type="number" class="form-control" id="quantity0" name="variant-0-quantity" required>
-                <label for="price0" class="form-label">Price:</label>
-                <input type="number" class="form-control" id="price0" name="variant-0-price" required>
+              <label for="color" class="form-label">Color</label>
+              <input type="text" class="form-control" id="color" name="color" required>
+                <label for="quantity" class="form-label">Quantity:</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" required>
+                <label for="price" class="form-label">Price:</label>
+                <input type="number" class="form-control" id="price" name="price" required>
+                <label for="is_listed" class="form-check-label">
+                  <input type="checkbox" class="form-check-input" id="is_listed" name="is_listed" checked>
+                  Is Listed
+              </label>
             </div>
-        </div>
-        <button type="button" class="btn btn-success" id="add-variant">Add Variant</button>
-        
+        </div>      
       </div>
     
     
@@ -84,28 +76,6 @@
   <!-- JavaScript for adding more images -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></script>
   <script>
-    $(document).ready(function() {
-      $("#add-variant").click(function() {
-          var formCount = $("#variant-inputs div").length;
-          var newInput = $(
-              '<div class="mb-3">' +
-              '<label for="size' + formCount + '" class="form-label">Size:</label>' +
-              '<select class="form-select" id="size' + formCount + '" name="size-' + formCount + '" required>' +
-              '{% for s in sizes %}' +
-              '<option value="{{ s.id }}">{{ s.size }}</option>' +
-              '{% endfor %}' +
-              '</select>' +
-              '<label for="quantity' + formCount + '" class="form-label">Quantity:</label>' +
-              '<input type="number" class="form-control" id="quantity' + formCount + '" name="variant-' + formCount + '-quantity" required>' +
-              '<label for="price' + formCount + '" class="form-label">Price:</label>' +
-              '<input type="number" class="form-control" id="price' + formCount + '" name="variant-' + formCount + '-price" required>' +
-              '</div>'
-          );
-  
-          $("#variant-inputs").append(newInput);
-      });
-  });
-   
    $(document).ready(function() {
     $("#add-image").click(function() {
         var formCount = $("#image-inputs input[type='file']").length + 1;

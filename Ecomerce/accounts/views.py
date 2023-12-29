@@ -214,11 +214,10 @@ def resend_otp(request, user_id):
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
-    return render(request,'users/userhome.html')
     
-    # categories= Category.objects.all()
-    # products= MyProducts.objects.all()
-    # images= ProductImages.objects.all()
-    # return render(request,'users/userhome.html',{'categories': categories,'products':products,'images':images})
+    categories= Category.objects.all()
+    products= MyProducts.objects.all()
+    images= ProductImages.objects.all()
+    return render(request,'users/userhome.html',{'categories': categories,'products':products,'images':images})
 
     

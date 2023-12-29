@@ -80,7 +80,7 @@
 
              <button class="wishlist-btn" onclick="toggleWishlist(this)"><i class="far fa-heart"></i></button>
                <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
-                  {% for img in product.image.all %}
+            {% for img in product.productimages_set.all %}
               {% if forloop.first %}
                 <!-- Display only the first image with a responsive class -->
                 <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">

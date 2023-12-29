@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django import forms
 from django.forms import inlineformset_factory
-from myadmin.models import MyProducts,ProductImages,Variant, Size, Color
+from myadmin.models import MyProducts,ProductImages,Variant, Color
 from .models import CustomUser
 from django.forms import inlineformset_factory
 from django.apps import apps
@@ -77,51 +77,49 @@ class CategoryForm(forms.ModelForm):
 # ProductImageFormSet = inlineformset_factory(Products, ProductImages, fields=['image'], extra=1)
 
 
-class ProductForm(forms.ModelForm):
+# class ProductForm(forms.ModelForm):
 
-    class Meta:
-        model = MyProducts  # Corrected the model name
-        fields = ['name', 'description', 'category', 'is_listed']
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control'}),
-            'category': forms.Select(attrs={'class': 'form-control'})
-        }
+#     class Meta:
+#         model = MyProducts  # Corrected the model name
+#         fields = ['name', 'description', 'category', 'is_listed']
+#         widgets = {
+#             'name': forms.TextInput(attrs={'class': 'form-control'}),
+#             'description': forms.Textarea(attrs={'class': 'form-control'}),
+#             'category': forms.Select(attrs={'class': 'form-control'})
+#         }
 
-class ColorForm(forms.ModelForm):
-    class Meta:
-        model = Color
-        fields = ['name']
+# class ColorForm(forms.ModelForm):
+#     class Meta:
+#         model = Color
+#         fields = ['name']
 
-class VariantForm(forms.ModelForm):
-    class Meta:
-        model = Variant
-        fields = ['size', 'quantity', 'price']
-        widgets = {
-            'size': forms.Select(attrs={'class': 'form-control'})
-        }
+# class VariantForm(forms.ModelForm):
+#     class Meta:
+#         model = Variant
+#         fields = [ 'quantity', 'price']
 
-    size = forms.ModelChoiceField(queryset=Size.objects.all())
 
-class ImageForm(forms.ModelForm):
-    class Meta:
-        model = ProductImages
-        fields = ['image']
+    
 
-VariantFormSet = inlineformset_factory(
-    MyProducts, 
-    Variant, 
-    form=VariantForm, 
-    fields=['size', 'quantity', 'price'],
-    extra=1, 
-    can_delete=True
-)
+# class ImageForm(forms.ModelForm):
+#     class Meta:
+#         model = ProductImages
+#         fields = ['image']
 
-ImageFormSet = inlineformset_factory(
-    MyProducts, 
-    ProductImages, 
-    form=ImageForm, 
-    fields=['image'],
-    extra=1, 
-    can_delete=True
-)
+# VariantFormSet = inlineformset_factory(
+#     MyProducts, 
+#     Variant, 
+#     form=VariantForm, 
+#     fields=['size', 'quantity', 'price'],
+#     extra=1, 
+#     can_delete=True
+# )
+
+# ImageFormSet = inlineformset_factory(
+#     MyProducts, 
+#     ProductImages, 
+#     form=ImageForm, 
+#     fields=['image'],
+#     extra=1, 
+#     can_delete=True
+# )

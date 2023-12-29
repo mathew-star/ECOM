@@ -3,6 +3,7 @@
 {% block main %}
 <div class="container mt-5">
   <h1 class="mb-4">Edit Product - {{ product.name }}</h1>
+  
 
   <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
     {% csrf_token %}
@@ -31,26 +32,6 @@
       <label for="price" class="form-label">Stock</label>
       <input type="number" class="form-control" id="price" name="price" value="{{ product.stock }}" required>
     </div>
-    {% comment %} <div class="mb-3">
-      <label for="rating" class="form-label">Rating:</label>
-      <select class="form-select" id="rating" name="rating" required>
-        <option value="1" {% if product.rating == 1 %}selected{% endif %}>4.1</option>
-        <option value="2" {% if product.rating == 2 %}selected{% endif %}>4.2</option>
-        <option value="3" {% if product.rating == 3 %}selected{% endif %}>4.3</option>
-        <option value="4" {% if product.rating == 4 %}selected{% endif %}>4.4</option>
-        <option value="5" {% if product.rating == 5 %}selected{% endif %}>5</option>
-      </select>
-    </div> {% endcomment %}
-    {% comment %} <div class="mb-3">
-      <label for="star" class="form-label">Star:</label>
-      <select class="form-select" id="star" name="star" required>
-        <option value="1" {% if product.star == 1 %}selected{% endif %}>1 star</option>
-        <option value="2" {% if product.star == 2 %}selected{% endif %}>2 stars</option>
-        <option value="3" {% if product.star == 3 %}selected{% endif %}>3 stars</option>
-        <option value="4" {% if product.star == 4 %}selected{% endif %}>4 stars</option>
-        <option value="5" {% if product.star == 5 %}selected{% endif %}>5 stars</option>
-      </select>
-    </div> {% endcomment %}
     
     <div id="image-inputs">
       {% for img in product.image.all %}
