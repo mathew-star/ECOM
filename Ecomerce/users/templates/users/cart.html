@@ -1,0 +1,216 @@
+{% extends "users/ubase.html" %}
+{% load static %}
+{% block css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .cart-container {
+        max-width: 1500px;
+        margin-left: 5%;
+        margin-top: 50px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px; /* Added gap between left and right boxes */
+    }
+
+    .cart-items {
+        flex: 12; /* Increased width to take more space */
+        padding: 20px;
+        width: 100%;
+        height: 60vh;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        margin-left: 10px; /* Adjust this value to move the box further to the left */
+    }
+
+    .order-summary {
+        flex: 1; /* Take remaining width */
+        width: 30%;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+        width: 100%;
+        margin-top: 20px;
+    }
+
+     th  {
+        border: 1px solid #dee2e6;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f8f9fa;
+    }
+
+    .coupon-code {
+        margin-top: 20px;
+    }
+
+    .subtotal, .total {
+        font-weight: bold;
+        font-size: 18px;
+        margin-top: 20px;
+    }
+
+    .quantity {
+        width: 150px;
+        margin: 0 auto;
+        display: flex;
+        float: left;
+        margin-right: 3rem;
+      }
+    
+      .quantity input {
+        width: 90%;
+        font-size: 15px;
+        padding: 10px;
+        border: none;
+        background-color: #A7A9BA;
+        box-sizing: border-box;
+        text-align: center;
+      }
+    
+      .quantity button {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        background-color: #f1f1f1;
+        border: none;
+        cursor: pointer;
+      }
+    
+      .quantity-minus {
+        border-radius: 5px 0 0 5px;
+      }
+    
+      .quantity-plus {
+        border-radius: 0 5px 5px 0;
+      }
+</style>
+{% endblock %}
+{% block main %}
+<title>Cart Page</title>
+</head>
+<body>
+    <div class="container cart-container">
+       <div class="cart-items col-lg-8">
+           <h2>Your Cart</h2>
+           <table class="table">
+               <thead>
+                   <tr>
+                      <th>Image</th>
+                      <th>Variant</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                      <th>Action</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   {% for item in cart_items %}
+                   <tr>
+                    {% with product_image=item.product_images.first %}
+                    <td><img src="{{ product_image.image.url }}" alt="Product Image" style="width: 50px;"></td>
+                {% endwith %}                      
+                <td>{{ item.product.name }}</td>
+                      <td>
+                        <div class="quantity">
+                            <button class="quantity-minus" onclick="decreaseQuantity('{{ item.id }}');updateStockStatus();">-</button>
+                            <input type="number" id="quantity-{{ item.id }}" min="1" max="100" value="{{ item.quantity }}" oninput="updateStockStatus()">
+                            <button class="quantity-plus" id="qty-plus-{{ item.id }}" onclick="increaseQuantity('{{ item.id }}');updateStockStatus();">+</button>
+                        </div>
+                        <p class="stock-status" style="font-size: small;">
+                            {% if variant.quantity < 2 %}
+                              Out of Stock !
+                            {% else %}
+                              In Stock
+                            {% endif %}
+                           </p>
+                      </td>
+                      <td>{{ item.variant.price }}</td>
+                       <td><a href="{% url 'remove_cart_item' itemid=item.id %}"><i class="fa-solid fa-trash" style="color: #000000;"></i></a></td>
+                    </tr>
+                   {% endfor %}
+               </tbody>
+           </table>
+           <p>Bag Count: {{ bag_count}}</p>
+       </div>
+    
+       <div class="order-summary col-lg-4">
+           <h2>Order Summary</h2>
+           <div class="coupon-code">
+            <label for="coupon">Apply Coupon Code:</label>
+            <input type="text" id="coupon" class="form-control" placeholder="Enter coupon code">
+            <button class="btn btn-primary mt-2">Apply</button>
+        </div>
+           <p id="subtotal">Subtotal: {{ total_price }}Rs</p>
+           <p id="total-price">Total: {{ total_price }} Rs</p>
+           <button class="btn btn-success mt-3">Proceed to Checkout</button>
+       </div>
+    </div>
+    
+    {% endblock %}
+    {% block script %}
+    <script>
+        function increaseQuantity(itemId) {
+            var quantityInput = document.getElementById('quantity-' + itemId);
+            var currentQuantity = parseInt(quantityInput.value, 10);
+            if (currentQuantity < 100) {
+                quantityInput.value = currentQuantity + 1;
+                updateQuantity(itemId, currentQuantity + 1);
+            }
+        }
+    
+        function decreaseQuantity(itemId) {
+            var quantityInput = document.getElementById('quantity-' + itemId);
+            var currentQuantity = parseInt(quantityInput.value, 10);
+            if (currentQuantity > 1) {
+                quantityInput.value = currentQuantity - 1;
+                updateQuantity(itemId, currentQuantity - 1);
+            }
+        }
+    
+        function updateQuantity(itemId, newQuantity) {
+            fetch(`/update_cart/${itemId}/${newQuantity}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const stockStatus = document.querySelector('.stock-status');
+                        if (data.out_of_stock) {
+                            stockStatus.textContent = 'Out of Stock!';
+                            stockStatus.classList.add('out-of-stock');
+                            stockStatus.classList.remove('in-stock');
+                            document.getElementById(`qty-plus-${itemId}`).disabled = true;
+                        } else {
+                            stockStatus.textContent = 'In Stock';
+                            stockStatus.classList.add('in-stock');
+                            stockStatus.classList.remove('out-of-stock');
+                            document.getElementById(`qty-plus-${itemId}`).disabled = false;
+                        }
+                        document.getElementById('total-price').innerText = `Total: ${data.total_price} Rs`;
+                        document.getElementById('subtotal').innerText = `Sub Total: ${data.total_price} Rs`;
+                    } else {
+                        console.error('Failed to update quantity.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating quantity:', error);
+                });
+        }
+
+
+    </script>
+    {% endblock %}
+    

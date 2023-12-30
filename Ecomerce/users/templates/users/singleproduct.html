@@ -124,8 +124,17 @@
          </p>
 
         <!-- Buttons -->
-        <button class="btn mt-5" style="background-color: #A7A9BA;">Add to Cart</button>
-        <button class="btn btn-secondary mt-5">Buy Now</button>
+        <div class="d-flex">
+          <form action="{% url 'add_to_cart' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="color_id" id="color_id" value="{{variant.color.id}}">
+            <input type="hidden" name="variant_id" id="variant_id" value="{{variant.id}}">
+            <input type="hidden" name="quantity" id="quantityInput" value="1">
+            <button type="submit" class="btn mt-5" style="background-color: #A7A9BA;">Add to Cart</button>
+          </form>
+        <button class="btn btn-secondary mt-5 ms-3">Buy Now</button>
+      </div>
       </div>
     </div>
    </div>

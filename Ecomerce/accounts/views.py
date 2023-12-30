@@ -8,7 +8,8 @@ from django.contrib.auth import login as auth_login,authenticate,logout as auth_
 from accounts.form import CustomUserCreationForm
 from accounts.models import CustomUser
 from myadmin.models import BlockedUser
-from myadmin.models import Category,MyProducts,ProductImages
+from myadmin.models import Category,MyProducts,ProductImages, Variant
+from users.models import cartitems
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -214,10 +215,26 @@ def resend_otp(request, user_id):
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
+    cart_items = cartitems.objects.filter(user=request.user)
+    bag_count= cartitems.objects.filter(user=request.user).count()
     
     categories= Category.objects.all()
     products= MyProducts.objects.all()
+
+    first_variant_prices = {}
+
+    # Fetch the first variant price for each product
+    for product in products:
+        first_variant = Variant.objects.filter(product_id=product).first()
+        if first_variant:
+            first_variant_prices[product.id] = first_variant.price
+    context = {
+         'categories':categories,
+        'products': products,
+        'bag_count':bag_count,
+    }
+
     images= ProductImages.objects.all()
-    return render(request,'users/userhome.html',{'categories': categories,'products':products,'images':images})
+    return render(request,'users/userhome.html',context)
 
     

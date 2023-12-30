@@ -90,8 +90,11 @@
                 <div class="product-info">
                     <div class="rating-box">4.1<i class="fas fa-star"></i></div>
                     <h5 class="product-name"> {{product.name}} </h5>
-                    <p class="product-price"> {{product.price}}Rs</p>
-                    <button class="add-to-cart-btn">Add to Cart</button>
+                    {% with first_variant=product.variant_set.first %}
+                    {% if first_variant %}
+                        <p class="product-price">Price: {{ first_variant.price }}</p>
+                    {% endif %}
+                    {% endwith %}
                 </div>
               
             </div>

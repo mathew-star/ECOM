@@ -16,19 +16,22 @@
             <div class="product-card">
 
              <button class="wishlist-btn" onclick="toggleWishlist(this)"><i class="far fa-heart"></i></button>
-               <a href="product-detail.html" class="prod-det">
-                  {% for img in product.image.all %}
-              {% if forloop.first %}
-                <!-- Display only the first image with a responsive class -->
-                <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">
-              {% endif %}
-            {% endfor %}</a>
+             <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
+                {% for img in product.productimages_set.all %}
+                {% if forloop.first %}
+                  <!-- Display only the first image with a responsive class -->
+                  <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">
+                {% endif %}
+              {% endfor %}</a>
                 
                 <div class="product-info">
                     <div class="rating-box">4.1<i class="fas fa-star"></i></div>
                     <h5 class="product-name"> {{product.name}} </h5>
-                    <p class="product-price"> {{product.price}}Rs</p>
-                    <button class="add-to-cart-btn">Add to Cart</button>
+                    {% with first_variant=product.variant_set.first %}
+                    {% if first_variant %}
+                        <p class="product-price">Price: {{ first_variant.price }}</p>
+                    {% endif %}
+                    {% endwith %}
                 </div>
               
             </div>
