@@ -52,7 +52,7 @@
                         <i class="fa-solid fa-user" style="color: #000000;"></i> </a>
                     <div class="dropdown-menu" aria-labelledby="userDropdown">
                         <a class="dropdown-item" href="{% url "userprofile" %}"><i class="fas fa-user"></i> My Profile</a>
-                        <a class="dropdown-item" href="#"><i class="fas fa-shopping-cart"></i> My Cart ({{ bag_count}})</a>
+                        <a class="dropdown-item" href="{% url 'cartitems_list' %}"><i class="fas fa-shopping-cart"></i> My Cart ({{ bag_count}})</a>
                         <a class="dropdown-item" href="#"><i class="fas fa-heart"></i> My Wishlist</a>
                         <div class="dropdown-divider"></div>
                         {% if user.is_authenticated %}

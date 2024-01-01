@@ -124,7 +124,9 @@
                     {% with product_image=item.product_images.first %}
                     <td><img src="{{ product_image.image.url }}" alt="Product Image" style="width: 50px;"></td>
                 {% endwith %}                      
-                <td>{{ item.product.name }}</td>
+                <td>{{ item.product.name }} 
+                    <p>{{item.color.name}}</p>
+                </td>
                       <td>
                         <div class="quantity">
                             <button class="quantity-minus" onclick="decreaseQuantity('{{ item.id }}');updateStockStatus();">-</button>
@@ -139,7 +141,7 @@
                             {% endif %}
                            </p>
                       </td>
-                      <td>{{ item.variant.price }}</td>
+                      <td>{{ item.variant.price }} <span id="quantity_price"></span></td>
                        <td><a href="{% url 'remove_cart_item' itemid=item.id %}"><i class="fa-solid fa-trash" style="color: #000000;"></i></a></td>
                     </tr>
                    {% endfor %}
@@ -157,8 +159,7 @@
         </div>
            <p id="subtotal">Subtotal: {{ total_price }}Rs</p>
            <p id="total-price">Total: {{ total_price }} Rs</p>
-           <button class="btn btn-success mt-3">Proceed to Checkout</button>
-       </div>
+           <a href="{% url ' cart_order' %}" class="btn btn-success mt-3">Proceed to Checkout</a>       </div>
     </div>
     
     {% endblock %}

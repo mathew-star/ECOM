@@ -1,6 +1,9 @@
 from django.db import models
 from accounts.models import CustomUser
 from myadmin.models import MyProducts,Variant,Color,ProductImages
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+import random
 class Address(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -33,6 +36,7 @@ class cartitems(models.Model):
             return ProductImages.objects.filter(product=self.product, color=self.color)
         return None
 
+
     
 class whishlist(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
@@ -43,6 +47,43 @@ class whishlist(models.Model):
 
 
 
-    
+class OrderStatus(models.Model):
+    STATUS_CHOICES = [
+    ('Pending', 'Pending'),
+    ('Shipped', 'Shipped'),
+    ('Delivered', 'Delivered'),
+    ]
+    status = models.CharField(max_length=100, choices=STATUS_CHOICES)
+
+    def __str__(self):
+        return self.name
+
+
+class Order(models.Model):
+    ORDER_ID_PREFIX = "OID-"
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    address =models.ForeignKey(Address,on_delete=models.CASCADE,related_name='orderaddress')
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    order_status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
+    payment = models.CharField(max_length=100)
+    order_id = models.CharField(max_length=15, unique=True, editable=False)
+
+
+    def save(self, *args, **kwargs):
+        random_code = str(random.randint(1000, 9999))
+
+        if not self.order_id:
+            self.order_id = f"{self.ORDER_ID_PREFIX}{random_code}"
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "Order"
+
+class OrderItem(models.Model):
+   variant = models.ForeignKey(Variant, on_delete=models.CASCADE, default=None)
+   order = models.ForeignKey(Order, on_delete=models.CASCADE)
+   quantity = models.PositiveIntegerField(default=1)
   
 

@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
@@ -137,6 +137,7 @@ def add_address(request):
         city = request.POST.get('city')
         state = request.POST.get('state')
 
+
         existing_address = Address.objects.filter(
             user=request.user,
             name=name,
@@ -254,8 +255,7 @@ def update_cart_quantity(request, item_id, new_quantity):
 def cartitems_list(request):
    cart_items = cartitems.objects.filter(user=request.user)
    bag_count= cartitems.objects.filter(user=request.user).count()
-   for i in cart_items:
-       print(i.quantity)
+
    total_price = sum([item.total_price for item in cart_items])
    print(total_price)
    context={
@@ -269,3 +269,106 @@ def remove_cart_item(request,itemid):
     cart_item = cartitems.objects.get(id=itemid)
     cart_item.delete()
     return redirect('cartitems_list')
+
+def remove_cartorder_item(request, itemid):
+    try:
+        cart_item = cartitems.objects.get(id=itemid)
+        cart_item.delete()
+        messages.success(request, 'Item removed successfully')
+    except cartitems.DoesNotExist:
+        messages.error(request, 'Item not found')
+
+    return redirect('cart_order')
+
+def cart_order(request):
+    user = request.user
+    address= Address.objects.filter(user=user)
+    cart_items = cartitems.objects.filter(user=request.user)
+    bag_count= cartitems.objects.filter(user=request.user).count()
+    first_address = address.first()
+
+    total_price = sum([item.total_price for item in cart_items])
+    context={
+        'cart_items' : cart_items,
+        'total_price':total_price,
+        'address':address,
+        'first_address':first_address
+    }
+    return render(request,"users/checkout.html",context)
+
+
+
+def get_address_details(request, address_id):
+    try:
+        address = get_object_or_404(Address, pk=address_id)
+
+        serialized_address = {
+            'id': address.id,
+            'name': address.name,
+            'phone': address.phone,
+            'pincode': address.pincode,
+            'locality': address.locality,
+            'address': address.address,
+            'city': address.city,
+            'state': address.state,
+        }
+
+        return JsonResponse(serialized_address)
+
+    except Address.DoesNotExist:
+        return JsonResponse({'error': 'Address not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+    
+def checkout(request):
+    user = request.user
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id') 
+    print(address_id)
+    selected_address = Address.objects.get(id=address_id)
+    cart_items = cartitems.objects.filter(user=request.user)
+    total_price = sum([item.total_price for item in cart_items])
+
+
+    order = Order.objects.create(
+        user=user,
+        address=selected_address,
+        total_price=total_price,
+        order_status=OrderStatus.objects.get(status='Pending'),
+        payment='COD' 
+    )
+
+    for item in cart_items:
+        OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
+
+    
+    messages.success(request, 'Order placed successfully!')
+    return redirect('user_orders')
+
+def user_orders(request):
+  cart_items = cartitems.objects.filter(user=request.user)
+  cart_items.delete()
+  user = CustomUser.objects.get(name=request.user.name)
+  orders = Order.objects.filter(user=user)
+  return render(request, 'users/user_orders.html', {'orders': orders})
+
+
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, order_id=order_id)
+    order_items = OrderItem.objects.filter(order=order)
+
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+
+    return render(request, 'users/order_detail.html', context)
+
+def cancel_order(request, pk):
+    order = Order.objects.get(pk=pk)
+    for item in order.orderitem_set.all():
+        variant = item.product.variant
+        variant.quantity += item.quantity
+        variant.save()
+    order.delete()
+    return redirect('home')

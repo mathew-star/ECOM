@@ -108,7 +108,6 @@
             {% endfor %}
         </select>
 
-
         <div class="quantity">
           <button class="quantity-minus" onclick="decreaseQuantity();updateStockStatus();">-</button>
           <input type="number" id="quantity" min="1" max="100" value="1" oninput="updateStockStatus()" >
@@ -122,6 +121,7 @@
             In Stock
           {% endif %}
          </p>
+
 
         <!-- Buttons -->
         <div class="d-flex">
