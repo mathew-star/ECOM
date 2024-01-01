@@ -52,11 +52,13 @@ class OrderStatus(models.Model):
     ('Pending', 'Pending'),
     ('Shipped', 'Shipped'),
     ('Delivered', 'Delivered'),
+    ("Caneled",'Canceled'),
+    ('Returned', 'Returned')
     ]
     status = models.CharField(max_length=100, choices=STATUS_CHOICES)
 
     def __str__(self):
-        return self.name
+        return self.status
 
 
 class Order(models.Model):

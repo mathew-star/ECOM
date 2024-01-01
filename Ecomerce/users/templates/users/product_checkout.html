@@ -1,0 +1,243 @@
+
+{% extends "users/ubase.html" %}
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static "css/checkout.css" %} ">
+{% endblock %}
+{% block main %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+
+  <section class="h-100 gradient-custom">
+    <div class="container py-5">
+      <div class="row d-flex justify-content-center my-4">
+    <div class="_3efVlV col-md-8">
+        <div class="rvsx1l">
+            <div class="_3E8aIl gGqMBW">
+                <div class="_2uTwDJ">
+                    
+                    <div class="RiK_Dp d-flex justify-content-start">
+                      <h3 class="_2-K-ro">
+                          <span class="_3ENQxz">1</span>
+                      </h3>
+                        <div 
+                          class="_1aULyb  ms-3">Login<svg height="10" width="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="_1t8m48"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="#2974f0"></path></svg>
+                          <div class="_1QFLA6">
+                            
+                          <span class="npYOZI text-black">{{request.user.name}}</span></div>
+                        </div>
+                       
+                    </div>
+                    <button class="_32l7f0">Change</button>
+                </div>
+            </div>
+        </div>
+        <div class="rvsx1l">
+          <div class="_3E8aIl gGqMBW">
+              <div class="address">
+                  <h3 class="_2-K-ro">
+                     
+                  </h3>
+                  <div class="RiK_Dp ms-3">
+                    <div class="_1aULyb"><span class="text-black">2</span>  Delivery Address
+                          <svg height="10" width="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="_1t8m48">
+                              <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="#2974f0"></path>
+                          </svg>
+                      </div>
+                      
+                      <div id="selectedAddress" class="_1QFLA6">
+                        <label for="addressSelect">Select Address:</label>
+                        <select id="addressSelect" name="selected_address_id" onchange="updateDeliveryAddress()">
+                            <option value="" selected disabled>Select an address</option>
+                            {% for address in address %}  {# Use addresses instead of address #}
+                                <option value="{{ address.id }}">{{ address.address }}</option>
+                            {% endfor %}
+                        </select>
+                        <div id="displayedAddress">
+                            {% if first_address %}
+                                <span>
+                                    {{ first_address.name }}
+                                    {{ first_address.phone }}
+                                    {{ first_address.pincode }}
+                                    {{ first_address.locality }}
+                                    {{ first_address.address }}
+                                    {{ first_address.city }}
+                                    {{ first_address.state }}
+                                </span>
+                            {% else %}
+                                <p>No address available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+
+
+       <div class="rvsx1l">
+          <div class="_3E8aIl gGqMBW">
+              <h3 class="_1hUz_t _2-K-ro">
+                  <span class="_3ENQxz">3</span>
+                  <span class="_1aULyb">Order Summary</span>
+              </h3>
+              <div class="cQZ0Lf">
+                  <div class="CCwLCA">
+                      <div class="d-flex flex-column">
+                              <div class=" mb-3">
+                                  <div class="row g-0">
+                                      <!-- Product Image -->
+                                      <div class="col-md-3">
+                                        {% for img in images %}
+                                        {% if forloop.first %}
+                                            <img src="{{ img.image.url }}" alt="{{ product.name }}" class="d-block w-100 product-img">
+                                        {% endif %}
+                                        {% endfor %}                                     </div>
+                                      <!-- Quantity Controls and Product Details -->
+                                      <div class="col-md-9">
+                                          <div class="">
+                                              <!-- Product Details -->
+                                              <h5 class="">{{ product.name }}</h5>
+                                              <p class="">{{ color.name }}</p>
+                                              <p class="">{{ variant.price }} x {{ quantity }}</p>
+                                              <div class="d-flex justify-content-between align-items-center">
+                                                  <!-- Quantity Controls -->
+                                                  {% comment %} <a href="{% url 'remove_cartorder_item' itemid=item.id %}" class="btn btn-danger ms-4">Remove</a> {% endcomment %}
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              <hr>
+
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+            <div class="accordion mb-3" id="paymentAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="upiOptionHeader">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#upiOptions" aria-expanded="true" aria-controls="upiOptions">
+                        Payment Options
+                    </button>
+                </h2>
+                <div id="upiOptions" class="accordion-collapse collapse show" aria-labelledby="upiOptionHeader" data-bs-parent="#paymentAccordion">
+                    <div class="accordion-body d-flex flex-column mb-3">
+                        <!-- UPI Option Content -->
+                        <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
+                            <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
+                            
+ 
+                        COD </label>
+                      <hr>
+
+                      {% comment %} <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww py-3">
+                          <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
+
+
+                      Wallet</label>
+                      <hr>
+                      <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
+         
+                        <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
+
+                      Credit Card </label>
+                        {% endcomment %}
+
+                    </div>
+                </div>
+            </div>
+
+          </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card mb-4" style="border-radius: 0%;">
+          <div class="card-header py-3">
+            <h5 class="mb-0">Summary</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+                Products
+                <span>{{ total_price }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                Shipping
+                <span>Gratis</span>
+              </li>
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-3">
+                <div>
+                  <strong>Total amount</strong>
+                  <strong>
+                    <p class="mb-0">(including VAT)</p>
+                  </strong>
+                </div>
+                <span><strong>{{ total_price }}-
+
+                </strong></span>
+              </li>
+            </ul>
+            <form id="checkoutform" method="POST" action="{% url 'product_checkout' %}">
+              {% csrf_token %}
+              <input type="hidden" name="address_id" id="address_id" value="">
+              <input type="hidden" name="product_id" id="product_id" value="{{product.id}}">
+              <input type="hidden" name="varaint_id" id="variant_id" value="{{variant.id}}">
+              <input type="hidden" name="total_price" id="total_price" value="{{total_price}}">
+              <input type="hidden" name="quantity" id="quantity" value="{{quantity}}">
+
+              <button type="submit" class="btn btn-primary">Place Order</button>
+          </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    </div>
+  </section>
+
+{% endblock  %}
+
+{% block script %}
+<script>
+  function updateDeliveryAddress() {
+      var addressSelect = document.getElementById("addressSelect");
+      var displayedAddress = document.getElementById("displayedAddress");
+      var addressIdInput = document.getElementById("address_id");  // Added this line
+
+      // Get the selected address ID
+      var selectedAddressId = addressSelect.value;
+
+      // Fetch the address details from the server
+      fetch(`/get_address_details/${selectedAddressId}`)
+          .then(response => response.json())
+          .then(data => {
+              // Display the fetched address details
+              displayedAddress.innerHTML = `
+                  <span>
+                      ${data.name}
+                      ${data.address}
+                      ${data.locality}
+                      ${data.city}
+                      ${data.state}
+                      ${data.pincode}<br>
+                      ${data.phone}
+                  </span>
+              `;
+              addressIdInput.value = selectedAddressId;  // Set the address ID
+          })
+          .catch(error => {
+              console.error('Error fetching address details:', error);
+          });
+  }
+</script>
+
+{% endblock  %}

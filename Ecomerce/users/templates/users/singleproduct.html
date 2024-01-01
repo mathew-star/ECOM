@@ -109,9 +109,9 @@
         </select>
 
         <div class="quantity">
-          <button class="quantity-minus" onclick="decreaseQuantity();updateStockStatus();">-</button>
-          <input type="number" id="quantity" min="1" max="100" value="1" oninput="updateStockStatus()" >
-          <button class="quantity-plus" onclick="increaseQuantity();updateStockStatus();">+</button>
+          <button class="quantity-minus" id="quantity-minus" onclick="decreaseQuantity();updateStockStatus();">-</button>
+          <input type="number" id="quantity" min="1" max="100" value="1" oninput="updateStockStatus(); updateQuantityInput();">
+          <button class="quantity-plus" id="quantity-plus" onclick="increaseQuantity();updateStockStatus();">+</button>
         </div>
 
          <p class="stock-status" style="font-size: x-large;">
@@ -125,6 +125,17 @@
 
         <!-- Buttons -->
         <div class="d-flex">
+          
+
+          <form action="{% url 'singleproduct_checkout' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="hidden" name="color_id" id="color_id" value="{{variant.color.id}}">
+            <input type="hidden" name="variant_id" id="variant_id" value="{{variant.id}}">
+            <input type="hidden" name="quantity" id="quantityInput" value="1">
+        <button class="btn btn-secondary mt-5 ms-3">Buy Now</button>
+          </form>
+
           <form action="{% url 'add_to_cart' %}" method="post">
             {% csrf_token %}
             <input type="hidden" name="product_id" value="{{ product.id }}">
@@ -133,7 +144,6 @@
             <input type="hidden" name="quantity" id="quantityInput" value="1">
             <button type="submit" class="btn mt-5" style="background-color: #A7A9BA;">Add to Cart</button>
           </form>
-        <button class="btn btn-secondary mt-5 ms-3">Buy Now</button>
       </div>
       </div>
     </div>
@@ -184,8 +194,6 @@
           return response.json();
         })
         .then(data => {
-          console.log(data);
-          console.log(data.variant.price)
           // Update product images
           const carouselInner = document.querySelector('#productCarousel .carousel-inner');
           carouselInner.innerHTML = '';
@@ -255,7 +263,15 @@
         });
     }
 
-
+    function updateQuantityInput() {
+      console.log("in up qua")
+      var quantity = document.getElementById('quantity').value;
+      document.getElementById('quantityInput').value = quantity;
+  }
+  document.getElementById('quantity').addEventListener('input', updateQuantityInput);
+  document.getElementById('quantity-minus').addEventListener('click', updateQuantityInput);
+  document.getElementById('quantity-plus').addEventListener('click', updateQuantityInput);
+  
   
 
 </script>

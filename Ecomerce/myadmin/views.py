@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect,get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import login, authenticate,logout
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -9,6 +10,8 @@ from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color
 from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
+from django.views.decorators.http import require_POST
+from users.models import Order, OrderStatus
 
 
 from django.apps import apps
@@ -178,32 +181,56 @@ def product_list(request):
     }
     return render(request, 'myadmin/product_list.html', context)
 
-
 def edit_product(request, product_id):
-    categories = Category.objects.all()
-    product = MyProducts.objects.get(id=product_id)
-    color= Variant.objects.filter(product_id=product_id).values('color__name')
-    p_colors=[]
-    for i in color:
-        for k,v in i.items():
-            p_colors.append(v)
+    
+    category=Category.objects.all()
+    product = get_object_or_404(MyProducts, id=product_id)
+    variants = Variant.objects.filter(product_id=product)
+    images = ProductImages.objects.filter(product=product)
+    for i in images:
+        print(i.image.url)
 
-    if request.method == 'POST':
-        print("in edit")
-        product.name = request.POST['name']
-        product.description = request.POST['description']
-        product.category = Category.objects.get(id=request.POST['category'])
+    if request.method == "POST":
+        product_name = request.POST.get('name')
+        product_description = request.POST.get('description')
+        product_category = request.POST.get('category')
+        product_is_listed = request.POST.get('is_listed') == 'on'
+
+        product.name = product_name
+        product.description = product_description
+        product.category_id = product_category
+        product.is_listed = product_is_listed
         product.save()
-        
-        for i in range(1, 5):
-            image = request.FILES.get(f'image{i}')
-            if image:
-                ProductImages.objects.create(product=product, image=image)
+
+        for variant in variants:
+            color_name = request.POST.get(f'color_{variant.id}')
+            quantity = request.POST.get(f'quantity_{variant.id}')
+            price = request.POST.get(f'price_{variant.id}')
+            is_listed = request.POST.get(f'is_listed_{variant.id}') == 'on'
+
+            variant.color.name = color_name
+            variant.quantity = quantity
+            variant.price = price
+            variant.is_listed = is_listed
+            variant.save()
+            for image in images:
+                image_field_name = f'image_{variant.id}_{image.id}'
+
+                print(variant.color.name)
+                if request.FILES.get(image_field_name):
+                    print(request.FILES.get(image_field_name))
+                    print("in var im")
+                    image.image = request.FILES[image_field_name]
+                    image.save()
+
+            new_image_field_name = f'new_image_{variant.id}'
+            new_image = request.FILES.get(new_image_field_name)
+            if new_image:
+                ProductImages.objects.create(product=product, color=variant.color, image=new_image)
 
         return redirect('product_list')
 
-    return render(request, 'myadmin/edit_product.html', {'categories': categories, 'product': product,'color':p_colors})
-
+    return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images,'category':category})
 
 def add_variant(request, product_id):
     product = MyProducts.objects.get(id=product_id)
@@ -274,3 +301,29 @@ def add_product(request):
         # Render the form for GET requests
         categories = Category.objects.all()
         return render(request, 'myadmin/add_product.html', {'categories': categories})
+    
+
+def admin_orders(request):
+    orders = Order.objects.all()
+    order_statuses = OrderStatus.objects.all()
+
+    context = {
+        'orders': orders,
+        'order_statuses': order_statuses,
+    }
+
+    return render(request, 'myadmin/admin_orders.html', context)
+
+
+def update_order_status(request, orderid):
+   if request.method == "POST":
+       print(request.POST)
+       order_id = request.POST.get('order_id')
+       order = get_object_or_404(Order, id=order_id)
+       status_id = request.POST.get('status')
+       status = get_object_or_404(OrderStatus, id=status_id)
+       order.order_status = status
+       order.save()
+       return redirect('admin_orders')
+
+   return render(request, 'admin_orders.html')

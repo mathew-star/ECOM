@@ -123,3 +123,11 @@ class CategoryForm(forms.ModelForm):
 #     extra=1, 
 #     can_delete=True
 # )
+
+
+class ProductForm(forms.ModelForm):
+   class Meta:
+       model = MyProducts
+       fields = ['name', 'description', 'category', 'is_listed']
+       
+VariantFormSet = inlineformset_factory(MyProducts, Variant, fields=('color', 'quantity', 'price', 'is_listed'), extra=1)

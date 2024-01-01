@@ -17,8 +17,13 @@ urlpatterns = [
     path('remove_cartorder_item/<int:itemid>/',views.remove_cart_item,name="remove_cartorder_item"),
     path('get_address_details/<int:address_id>/', views.get_address_details, name='get_address_details'),
     path('checkout/', views.checkout,name="checkout"),
+    path('product_checkout/',views.product_checkout,name="product_checkout"),
+    path('singleproduct_checkout/',views.singleproduct_checkout,name="singleproduct_checkout"),
     path('user_orders/',views.user_orders, name="user_orders"),
-    path('order_detail/<int:order_id>/', views.order_detail,name="order_details"),
+    path('order_detail/<str:oid>/', views.order_detail,name="order_detail"),
+    path('cancel_order/',views.cancel_order, name="cancel_order"),
+
+
 
 
 ]

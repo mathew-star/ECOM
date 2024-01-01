@@ -1,0 +1,75 @@
+{% extends "myadmin/adminbase.html" %}
+{% block css %}
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .status-dropdown {
+        width: 100px;
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+
+<div class="container">
+    <h2>Admin Orders</h2>
+   
+    <table>
+      <thead>
+          <tr>
+              <th>Order ID</th>
+              <th>Order Date</th>
+              <th>Total Price</th>
+              <th>Order Status</th>
+              <th>Action</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for order in orders %}
+              <tr>
+                  <td>{{ order.order_id }}</td>
+                  <td>{{ order.created_at|date:"D d M Y" }}</td>
+                  <td>{{ order.total_price }}</td>
+                  <td>
+                    <form id="updateOrderStatusForm{{ order.id }}" method="post" action="{% url 'update_order_status' order.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                        <select class="status-dropdown" name="status">
+                            {% for status in order_statuses %}
+                                <option value="{{ status.id }}" {% if order.order_status.id == status.id %}selected{% endif %}>
+                                    {{ status.status }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                     
+                  </td>
+                  <td> 
+                    <button type="submit" form="updateOrderStatusForm{{ order.id }}">Update Status</button>
+                </form>
+                  </td>
+              </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+    </div>
+{% endblock %}
+{% block script %}
+<script>
+
+</script>
+
+{% endblock %}

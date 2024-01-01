@@ -10,6 +10,7 @@ from django.core import signing
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned
+from decimal import Decimal
 
 def cart_count(request):
    if request.user.is_authenticated:
@@ -320,6 +321,71 @@ def get_address_details(request, address_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
     
+
+def singleproduct_checkout(request):
+        
+        if request.method == 'POST':
+            product_id = request.POST['product_id']
+            color_id = request.POST['color_id']
+            variant_id= request.POST['variant_id']
+            quantity= request.POST['quantity']
+            print (quantity)
+            user= request.user
+        address= Address.objects.filter(user=user)
+        first_address = address.first()
+        product = MyProducts.objects.get(id=product_id)
+        color = get_object_or_404(Color, id=color_id)
+        images=ProductImages.objects.filter(color_id=color_id)
+        variant = get_object_or_404(Variant, product_id=product, color=color)
+        print(quantity)
+        price = Decimal(variant.price)
+        total_price = price * Decimal(quantity)
+
+        
+        context={
+            'product':product,
+            'images':images,
+            'color':color,
+            'variant':variant,
+            'total_price':total_price,
+            'quantity':quantity,
+            'first_address':first_address,
+            'address':address,
+
+        }
+        return render(request,"users/product_checkout.html",context)
+        
+
+def product_checkout(request):
+    user = request.user
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id')
+        product_id = request.POST.get('product_id')
+        variant_id = request.POST.get('varaint_id')
+        total_price = request.POST.get('total_price')
+        quantity = request.POST.get('quantity')
+        quantity=int(quantity)
+    print(quantity, total_price, address_id)
+    selected_address = Address.objects.get(id=address_id)
+    product=MyProducts.objects.get(id=product_id)
+    variant=Variant.objects.get(id=variant_id)
+    
+    order = Order.objects.create(
+        user=user,
+        address=selected_address,
+        total_price=total_price,
+        order_status=OrderStatus.objects.get(status='Pending'),
+        payment='COD' 
+    )
+    OrderItem.objects.create(order=order, variant=variant, quantity=quantity)
+
+    variant.quantity -= quantity
+    variant.save()
+
+    return redirect('user_orders')
+
+
+    
 def checkout(request):
     user = request.user
     if request.method == 'POST':
@@ -341,6 +407,10 @@ def checkout(request):
     for item in cart_items:
         OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
 
+        variant = get_object_or_404(Variant, id=item.variant.id)
+        variant.quantity -= item.quantity
+        variant.save()
+
     
     messages.success(request, 'Order placed successfully!')
     return redirect('user_orders')
@@ -353,22 +423,51 @@ def user_orders(request):
   return render(request, 'users/user_orders.html', {'orders': orders})
 
 
-def order_detail(request, order_id):
-    order = get_object_or_404(Order, order_id=order_id)
+def order_detail(request, oid):
+
+    order = get_object_or_404(Order, order_id=oid)
     order_items = OrderItem.objects.filter(order=order)
+
+    if order.order_status.status == 'Pending':
+        progress_percentage = 0
+
+    elif order.order_status.status == 'Shipped':
+        progress_percentage = 50
+
+    else:
+        progress_percentage = 100
 
     context = {
         'order': order,
         'order_items': order_items,
+        'progress_percentage': progress_percentage,
     }
 
-    return render(request, 'users/order_detail.html', context)
 
-def cancel_order(request, pk):
-    order = Order.objects.get(pk=pk)
-    for item in order.orderitem_set.all():
-        variant = item.product.variant
-        variant.quantity += item.quantity
-        variant.save()
-    order.delete()
-    return redirect('home')
+    return render(request, 'users/order_details.html', context)
+
+# def cancel_order(request, pk):
+#     order = Order.objects.get(pk=pk)
+#     for item in order.orderitem_set.all():
+#         variant = item.product.variant
+#         variant.quantity += item.quantity
+#         variant.save()
+#     order.delete()
+#     return redirect('userprofile')
+
+def cancel_order(request):
+    if request.method == "POST":
+        oid = request.POST.get('order_id')
+        order = get_object_or_404(Order, id=oid)
+        order_items = OrderItem.objects.filter(order=order)
+
+        for item in order_items:
+            variant = Variant.objects.get(id=item.variant.id)
+            variant.quantity += item.quantity
+            variant.save()
+
+        order.order_status = OrderStatus.objects.get(status='Canceled')
+        order.save()
+
+        return redirect('user_orders')
+

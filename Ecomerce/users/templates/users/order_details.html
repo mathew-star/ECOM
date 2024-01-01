@@ -1,0 +1,115 @@
+{% extends 'users/ubase.html' %}
+
+{% block css %}
+<style>
+
+</style>
+{% endblock %}
+{% block main %}
+<div class="container mt-5">
+    <h2>Order Details</h2>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <h4>Order Information</h4>
+        <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+        <p><strong>Total Price:</strong> {{ order.total_price }} Rs</p>
+        <p><strong>Payment Method:</strong> {{ order.payment }}</p>
+        <p><strong>Order Status:</strong> {{ order.order_status.status }}</p>
+      </div>
+
+      <div class="col-md-6">
+        <h4>Shipping Address</h4>
+        <p><strong>Name:</strong> {{ order.address.name }}</p>
+        <p><strong>Phone:</strong> {{ order.address.phone }}</p>
+        <p><strong>Address:</strong> {{ order.address.address }}, {{ order.address.locality }}, {{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}</p>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <h4>Order Items</h4>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Variant Color</th>
+              <th>Quantity</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order_item in order_items %}
+              <tr>
+                <td>{{ order_item.variant.product_id.name }}</td>
+                <td>{{ order_item.variant.color.name }}</td>
+                <td>{{ order_item.quantity }}</td>
+                <td>{{ order_item.variant.price }} Rs</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+{% if order.order_status.status != 'Canceled' %}
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <h4>Order Progress</h4>
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%;" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">  </div>
+        </div>
+        <div style="display: flex; justify-content: space-between;"> 
+            <span>Pending</span>
+            <span>Shipped</span>
+            <span>Delivered</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+
+   
+
+    <div class="row mt-4">
+      <div class="col-md-12">
+        {% if order.order_status.status == 'Pending' %}
+        <button class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">Cancel Order</button>
+
+        {% elif order.order_status.status == 'Shipped' %}
+        <button class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">Cancel Order</button>
+
+        {% else %}
+          <button class="btn btn-primary">Return Order</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+ </div>
+
+     <!-- Cancel Order Modal -->
+     <div class="modal fade" id="cancelOrderModal" tabindex="-1" role="dialog" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+         <div class="modal-content">
+           <div class="modal-header">
+             <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order</h5>
+             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+               <span aria-hidden="true">&times;</span>
+             </button>
+           </div>
+           <div class="modal-body">
+             Are you sure you want to cancel this order?
+           </div>
+           <div class="modal-footer">
+            <form action="{% url 'cancel_order' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+            
+             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+             <button type="submit" class="btn btn-danger">Cancel Order</button>
+            </form>
+           </div>
+         </div>
+        </div>
+    </div>
+{% endblock %}
+
