@@ -215,8 +215,6 @@ def resend_otp(request, user_id):
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
-    cart_items = cartitems.objects.filter(user=request.user)
-    bag_count= cartitems.objects.filter(user=request.user).count()
     
     categories= Category.objects.all()
     products= MyProducts.objects.all()
@@ -231,7 +229,7 @@ def home(request):
     context = {
          'categories':categories,
         'products': products,
-        'bag_count':bag_count,
+        'first_variant':first_variant,
     }
 
     images= ProductImages.objects.all()

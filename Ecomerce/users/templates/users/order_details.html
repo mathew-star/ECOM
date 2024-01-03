@@ -20,9 +20,9 @@
 
       <div class="col-md-6">
         <h4>Shipping Address</h4>
-        <p><strong>Name:</strong> {{ order.address.name }}</p>
-        <p><strong>Phone:</strong> {{ order.address.phone }}</p>
-        <p><strong>Address:</strong> {{ order.address.address }}, {{ order.address.locality }}, {{ order.address.city }}, {{ order.address.state }} - {{ order.address.pincode }}</p>
+        <p><strong>Name:</strong> {{ order.order_address.name }}</p>
+        <p><strong>Phone:</strong> {{ order.order_address.phone }}</p>
+        <p><strong>Address:</strong> {{ order.order_address.address }}, {{ order.order_address.locality }}, {{ order.order_address.city }}, {{ order.order_address.state }} - {{ order.order_address.pincode }}</p>
       </div>
     </div>
 
@@ -78,7 +78,7 @@
         {% elif order.order_status.status == 'Shipped' %}
         <button class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">Cancel Order</button>
 
-        {% else %}
+        {% elif order.order_status.status == 'Delivered' %}
           <button class="btn btn-primary">Return Order</button>
         {% endif %}
       </div>

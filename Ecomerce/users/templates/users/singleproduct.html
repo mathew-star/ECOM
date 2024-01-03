@@ -67,6 +67,35 @@
   .quantity-plus {
     border-radius: 0 5px 5px 0;
   }
+
+  .btn-wrapper {
+    display: inline-block;
+    position: absolute;
+    top: 85%;
+    left: 80%;
+    margin: 10px;
+    
+ }
+ 
+ .wishlist-btn {
+    color: black;
+    background-color: #A7A9BA;
+    border: none;
+    padding: 8px 47px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border-radius: 12px;
+ }
+ 
+ .wishlist-btn:hover {
+    background-color: grey; /* Darker tomato color */
+    color: white;
+ }
+ 
+
   </style>
 {% endblock %}
 
@@ -95,7 +124,7 @@
           </button>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-6" style="position: relative;">
         <!-- Product details -->
         <h1 class="mb-4 product-title">{{ product.name }}</h1>
         <p class="mb-4 product-description">{{ product.description }}</p>
@@ -114,7 +143,7 @@
           <button class="quantity-plus" id="quantity-plus" onclick="increaseQuantity();updateStockStatus();">+</button>
         </div>
 
-         <p class="stock-status" style="font-size: x-large;">
+         <p class="stock-status product-stock" style="font-size: x-large;">
           {% if variant.quantity < 2 %}
             Out of Stock !
           {% else %}
@@ -122,9 +151,12 @@
           {% endif %}
          </p>
 
-
+         <div class="btn-wrapper" style="float: left;">
+          <a class="btn btn-primary wishlist-btn" href="{% url "add_to_wishlist" product.id variant.id %}">Add to wishlist</a>
+       </div>
         <!-- Buttons -->
         <div class="d-flex">
+          
           
 
           <form action="{% url 'singleproduct_checkout' %}" method="post">
@@ -133,7 +165,7 @@
             <input type="hidden" name="color_id" id="color_id" value="{{variant.color.id}}">
             <input type="hidden" name="variant_id" id="variant_id" value="{{variant.id}}">
             <input type="hidden" name="quantity" id="quantityInput" value="1">
-        <button class="btn btn-secondary mt-5 ms-3">Buy Now</button>
+        <button id="buyNowButton" class="btn btn-secondary mt-5 ms-3">Buy Now</button>
           </form>
 
           <form action="{% url 'add_to_cart' %}" method="post">
@@ -142,16 +174,17 @@
             <input type="hidden" name="color_id" id="color_id" value="{{variant.color.id}}">
             <input type="hidden" name="variant_id" id="variant_id" value="{{variant.id}}">
             <input type="hidden" name="quantity" id="quantityInput" value="1">
-            <button type="submit" class="btn mt-5" style="background-color: #A7A9BA;">Add to Cart</button>
+            <button id="addToCartButton" type="submit" class="btn mt-5  ms-3" style="background-color: #A7A9BA;">Add to Cart</button>
           </form>
-      </div>
+          </div>
+          
       </div>
     </div>
    </div>
 
+
+
 {% endblock %}
-
-
  
 {% block script %}
 
@@ -175,11 +208,44 @@
     }
   }
 
+  window.addEventListener("load", (event) => {
+      console.log("hello")
+      var color = document.getElementsByClassName("color")[0]; 
+      var colorid = color.getAttribute("id");
+      fetch(`/get_product_details/${colorid}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => { 
+
+          let buyNowButton = document.getElementById('buyNowButton');
+          let addToCartButton = document.getElementById('addToCartButton');
+
+          productPrice.textContent = `Price: ${data.variant.price} Rs`;
+  
+          if (data.variant.quantity < 2) {
+            buyNowButton.style.display = 'none';
+            addToCartButton.style.display = 'none';
+
+          } else {
+            buyNowButton.style.display = 'block';
+            addToCartButton.style.display = 'block';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching product details:', error);
+
+        });
+    
+
+  });
 
   
 
     function updateProductDetails() {
-      // Get the selected color
       var colorSelect = document.getElementById("colorSelect");
       var selectedOption = colorSelect.options[colorSelect.selectedIndex];
       var colorid = selectedOption.getAttribute("id"); 
@@ -214,23 +280,31 @@
   
           // Update product details
           const productPrice = document.querySelector('#productPrice');
-          const productStock = document.querySelector('.product-stock'); // Update this selector based on your HTML structure
-  
+          const productStock = document.querySelector('.product-stock'); 
+          let buyNowButton = document.getElementById('buyNowButton');
+          let addToCartButton = document.getElementById('addToCartButton');
+
           productPrice.textContent = `Price: ${data.variant.price} Rs`;
   
           if (data.variant.quantity < 2) {
+            buyNowButton.style.display = 'none';
+            addToCartButton.style.display = 'none';
             productStock.textContent = 'Out of Stock!';
             productStock.classList.add('out-of-stock');
             productStock.classList.remove('in-stock');
           } else {
+            buyNowButton.style.display = 'none';
+            addToCartButton.style.display = 'none';
             productStock.textContent = 'In Stock';
             productStock.classList.add('in-stock');
             productStock.classList.remove('out-of-stock');
+            buyNowButton.style.display = 'block';
+      addToCartButton.style.display = 'block';
           }
         })
         .catch(error => {
           console.error('Error fetching product details:', error);
-          // Handle the error as needed, e.g., display an error message to the user
+
         });
     }
   

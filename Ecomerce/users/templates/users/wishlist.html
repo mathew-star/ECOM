@@ -1,0 +1,36 @@
+{% extends "users/ubase.html" %}
+{% load static %}
+
+
+
+{% block main %}
+<div class="container cart-container" style="height: 90vh;" >
+    <div class="cart-items col-lg-12" style="margin-top: 80px;">
+        <h2>Your Wishlist</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                   <th>Name</th>
+                   <th>Variant</th>
+                   <th>Price</th>
+                   <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in wishlist %}
+                <tr>
+                 <td> {{item.product.name}} </td>
+                 
+             <td>{{ item.variant.color }} </td>
+                 <td><p>{{item.variant.price}}</p> </td>
+            
+
+                    <td><a href="{% url 'remove_wishlist_item' itemid=item.id %}"><i class="fa-solid fa-trash" style="color: #000000;"></i></a></td>
+                 </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+{% endblock %}

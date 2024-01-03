@@ -298,7 +298,6 @@ def add_product(request):
 
         return redirect('product_list')
     else:
-        # Render the form for GET requests
         categories = Category.objects.all()
         return render(request, 'myadmin/add_product.html', {'categories': categories})
     

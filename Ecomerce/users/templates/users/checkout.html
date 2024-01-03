@@ -32,7 +32,6 @@
                         </div>
                        
                     </div>
-                    <button class="_32l7f0">Change</button>
                 </div>
             </div>
         </div>
@@ -47,10 +46,12 @@
                           <svg height="10" width="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="_1t8m48">
                               <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="#2974f0"></path>
                           </svg>
+                          
                       </div>
                       
                       <div id="selectedAddress" class="_1QFLA6">
                         <label for="addressSelect">Select Address:</label>
+                        
                         <select id="addressSelect" name="selected_address_id" onchange="updateDeliveryAddress()">
                             <option value="" selected disabled>Select an address</option>
                             {% for address in address %}  {# Use addresses instead of address #}
@@ -70,7 +71,11 @@
                                 </span>
                             {% else %}
                                 <p>No address available.</p>
+                                <a href="{% url "add_address" %}">
+                                  <i class="fas fa-plus me-2"></i>Add Address
+                                </a>
                             {% endif %}
+                            
                         </div>
                     </div>
                   </div>
@@ -136,7 +141,7 @@
                         COD </label>
                       <hr>
 
-                      {% comment %} <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww py-3">
+                     <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww py-3">
                           <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
 
 
@@ -146,9 +151,8 @@
          
                         <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
 
-                      Credit Card </label>
-                        {% endcomment %}
-
+                      Online </label>
+                   
                     </div>
                 </div>
             </div>

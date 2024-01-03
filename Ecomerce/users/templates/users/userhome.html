@@ -17,7 +17,7 @@
  <div id="carouselExample" class="carousel slide" data-ride="carousel">
     <div class="carousel-inner">
         <div class="carousel-item active">
-            <img src="{{ MEDIA_URL }} media/images/balls-5-min.jpg" class="d-block w-100 img-fluid float-left" alt="Slide 1">
+            <img src="{{ MEDIA_URL }} media/images/Xmas-Most-Wanted-boot1.jpg" class="d-block w-100 img-fluid float-left" alt="Slide 1"  style="height: 100vh;">
           <div class="carousel-text">
               <h2>New Arrival</h2>
               <p>Discover our new collections</p>
@@ -27,7 +27,7 @@
         <!-- Remove 'active' class from the following items -->
 
         <div class="carousel-item">
-            <img src="{{ MEDIA_URL }} media/images/download.jpeg" class="d-block w-100 img-fluid float-left" alt="Slide 3">
+            <img src="{{ MEDIA_URL }} media/images/christmas-baskteball.jpg" class="d-block w-100 img-fluid float-left" alt="Slide 3" style="height: 100vh;">
             <div class="carousel-text ">
                 <h2>New Arrival</h2>
                 <p>Discover our new collections</p>
@@ -78,7 +78,9 @@
          
             <div class="product-card">
 
-             <button class="wishlist-btn" onclick="toggleWishlist(this)"><i class="far fa-heart"></i></button>
+                <button class="wishlist-btn" onclick="toggleWishlist(this, {{ product.id }}, {{ first_variant.id }})">
+                    <i class="far fa-heart"></i>
+                </button>
                <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
             {% for img in product.productimages_set.all %}
               {% if forloop.first %}
@@ -147,8 +149,45 @@
 
 {% block script %}
 <script>
-    function toggleWishlist(button) {
+    function toggleWishlist(button, productId, variantId) {
         button.classList.toggle('wishlist-selected');
+
+        // Get the CSRF token from the cookie
+        const csrftoken = getCookie('csrftoken');
+
+        // Send AJAX request to add/remove from wishlist
+        const url = `/add_to_wishlist/${productId}/${variantId}/`;
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({})  // You can include data if needed
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Handle the response
+            if (data.status === 'added') {
+                console.log('Added to wishlist');
+            } else if (data.status === 'removed') {
+                console.log('Removed from wishlist');
+            } else if (data.status === 'already_added') {
+                console.log('Already in wishlist');
+            } else if (data.status === 'not_in_wishlist') {
+                console.log('Not in wishlist');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    // Function to get the CSRF token from the cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
     }
 </script>
 {% endblock %}

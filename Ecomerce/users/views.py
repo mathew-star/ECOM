@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems,Order, OrderItem,OrderStatus
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
@@ -49,10 +51,8 @@ def single_product(request,product_id):
 
 
 def get_product_details(request,colorid):
-    print("reached")
+
     try:
-        print("fetch")
-        
         variant = Variant.objects.get(color_id=colorid)
         images= ProductImages.objects.filter(color_id=variant.color.id)
         images = [{'image': img.image.url} for img in images]
@@ -198,6 +198,54 @@ def edit_address(request, address_id):
     return render(request, 'users/edit_address.html', {'address': address})
 
 
+
+
+def wishlist(request):
+    w= whishlist.objects.all()
+    context={'wishlist':w}
+    return render(request,"users/wishlist.html",context)
+
+def remove_wishlist_item(request,itemid):
+    w = whishlist.objects.get(id=itemid)   
+    w.delete()
+    return redirect("wishlist") 
+
+
+
+@login_required
+def add_to_wishlist(request, product_id,variant_id):
+    user = request.user
+    product = get_object_or_404(MyProducts, id=product_id)
+    variant = get_object_or_404(Variant, id=variant_id)
+    # Check if the product is already in the wishlist
+    wishlist_item, created = whishlist.objects.get_or_create(user=user, product=product,variant=variant,color=variant.color)
+
+    if created:
+        status = 'added'
+    else:
+        status = 'already_added'
+
+    return redirect("wishlist")
+
+
+@login_required
+@require_POST
+def remove_from_wishlist(request, product_id,variant_id):
+    user = request.user
+    product = get_object_or_404(MyProducts, id=product_id)
+    variant= get_object_or_404(Variant, id=variant_id)
+    # Check if the product is in the wishlist
+    wishlist_item = whishlist.objects.filter(user=user, product=product,variant=variant).first()
+
+
+    if wishlist_item:
+        wishlist_item.delete()
+        status = 'removed'
+    else:
+        status = 'not_in_wishlist'
+
+    return JsonResponse({'status': status})
+
 @login_required
 def add_to_cart(request):
    print("in add cart")
@@ -287,6 +335,11 @@ def cart_order(request):
     cart_items = cartitems.objects.filter(user=request.user)
     bag_count= cartitems.objects.filter(user=request.user).count()
     first_address = address.first()
+    for item in cart_items:
+            if item.variant.quantity < 2:
+                messages.error(request, f"Item '{item.product.name}' is out of stock.")
+                return redirect('cartitems_list')
+    
 
     total_price = sum([item.total_price for item in cart_items])
     context={
@@ -370,13 +423,55 @@ def product_checkout(request):
     product=MyProducts.objects.get(id=product_id)
     variant=Variant.objects.get(id=variant_id)
     
-    order = Order.objects.create(
+    existing_address = OrderAddress.objects.filter(
+            user=user,
+            name= selected_address.name,
+            phone=selected_address.phone,
+            pincode= selected_address.pincode,
+            locality= selected_address.locality,
+            address=selected_address.address,
+            city= selected_address.city,
+            state= selected_address.state 
+        ).exists()
+    if existing_address:
+        address = OrderAddress.objects.get(
+            user=user,
+            name= selected_address.name,
+            phone=selected_address.phone,
+            pincode= selected_address.pincode,
+            locality= selected_address.locality,
+            address=selected_address.address,
+            city= selected_address.city,
+            state= selected_address.state 
+        )
+        order = Order.objects.create(
         user=user,
-        address=selected_address,
+        order_address= address,
         total_price=total_price,
         order_status=OrderStatus.objects.get(status='Pending'),
         payment='COD' 
     )
+    else:
+        order_address= OrderAddress(
+        user= user,
+        name= selected_address.name,
+        phone=selected_address.phone,
+        pincode= selected_address.pincode,
+        locality= selected_address.locality,
+        address=selected_address.address,
+        city= selected_address.city,
+        state= selected_address.state 
+         
+    )
+        order_address.save() 
+
+        order = Order.objects.create(
+            user=user,
+            order_address=order_address,
+            total_price=total_price,
+            order_status=OrderStatus.objects.get(status='Pending'),
+            payment='COD' 
+        )
     OrderItem.objects.create(order=order, variant=variant, quantity=quantity)
 
     variant.quantity -= quantity
@@ -390,19 +485,66 @@ def checkout(request):
     user = request.user
     if request.method == 'POST':
         address_id = request.POST.get('address_id') 
-    print(address_id)
-    selected_address = Address.objects.get(id=address_id)
+    if address_id:
+        selected_address = Address.objects.get(id=address_id)
+    else:
+        messages.warning(request,"Add a Address")
+        return render(request, "users/checkout.html")
+
+        
     cart_items = cartitems.objects.filter(user=request.user)
     total_price = sum([item.total_price for item in cart_items])
 
-
-    order = Order.objects.create(
+    existing_address = OrderAddress.objects.filter(
+            user=user,
+            name= selected_address.name,
+            phone=selected_address.phone,
+            pincode= selected_address.pincode,
+            locality= selected_address.locality,
+            address=selected_address.address,
+            city= selected_address.city,
+            state= selected_address.state 
+        ).exists()
+    if existing_address:
+        address = OrderAddress.objects.get(
+            user=user,
+            name= selected_address.name,
+            phone=selected_address.phone,
+            pincode= selected_address.pincode,
+            locality= selected_address.locality,
+            address=selected_address.address,
+            city= selected_address.city,
+            state= selected_address.state 
+        )
+        order = Order.objects.create(
         user=user,
-        address=selected_address,
+        order_address= address,
         total_price=total_price,
         order_status=OrderStatus.objects.get(status='Pending'),
         payment='COD' 
     )
+    else:
+        order_address= OrderAddress(
+        user= user,
+        name= selected_address.name,
+        phone=selected_address.phone,
+        pincode= selected_address.pincode,
+        locality= selected_address.locality,
+        address=selected_address.address,
+        city= selected_address.city,
+        state= selected_address.state 
+         
+    )
+        order_address.save() 
+
+        order = Order.objects.create(
+            user=user,
+            order_address=order_address,
+            total_price=total_price,
+            order_status=OrderStatus.objects.get(status='Pending'),
+            payment='COD' 
+        )
+
 
     for item in cart_items:
         OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
@@ -424,7 +566,6 @@ def user_orders(request):
 
 
 def order_detail(request, oid):
-
     order = get_object_or_404(Order, order_id=oid)
     order_items = OrderItem.objects.filter(order=order)
 

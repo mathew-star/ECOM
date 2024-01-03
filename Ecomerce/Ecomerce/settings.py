@@ -157,3 +157,8 @@ EMAIL_PORT = 587  # Update with your SMTP port
 EMAIL_USE_TLS = True  # Use TLS for security
 EMAIL_HOST_USER = 'mjunni99@gmail.com'  # Update with your email
 EMAIL_HOST_PASSWORD = 'bzps pqua eyhm umqz'  # Update with your email password
+
+
+
+RAZORPAY_KEY = 'rzp_test_3uw9LHhKpj4Yfq'
+RAZORPAY_SECRET = 'ZGQcWB70nhBKNQ99coH6baCh'
