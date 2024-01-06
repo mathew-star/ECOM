@@ -53,7 +53,9 @@ class OrderStatus(models.Model):
     ('Shipped', 'Shipped'),
     ('Delivered', 'Delivered'),
     ("Caneled",'Canceled'),
-    ('Returned', 'Returned')
+    ('Returned', 'Returned'),
+    ('Paid', 'Paid')
+
     ]
     status = models.CharField(max_length=100, choices=STATUS_CHOICES)
 
@@ -83,6 +85,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     order_status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
+    payment_status = models.CharField(max_length=10,default='Unpaid')
     payment = models.CharField(max_length=100)
     order_id = models.CharField(max_length=15, unique=True, editable=False)
 
@@ -104,3 +107,19 @@ class OrderItem(models.Model):
    quantity = models.PositiveIntegerField(default=1)
   
 
+
+class Wallet_user(models.Model):
+    amount = models.DecimalField(max_digits=10, decimal_places=2,default = 0)
+    payment_type = models.CharField(max_length = 100,null = True)
+    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE, related_name = 'wallet',null = True)
+
+class WalletHistory(models.Model):
+    TRANSACTION_CHOICES = [
+        ('credit', 'Credit'),
+        ('debit', 'Debit'),
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
+    date = models.DateTimeField(auto_now_add=True)

@@ -160,5 +160,5 @@ EMAIL_HOST_PASSWORD = 'bzps pqua eyhm umqz'  # Update with your email password
 
 
 
-RAZORPAY_KEY = 'rzp_test_3uw9LHhKpj4Yfq'
-RAZORPAY_SECRET = 'ZGQcWB70nhBKNQ99coH6baCh'
+RAZORPAY_KEY = 'rzp_test_hjG9C59EJBeKxG'
+RAZORPAY_SECRET = 'YGNkn0IMQYPYPpnwJ2EAwy9K'

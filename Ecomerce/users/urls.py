@@ -17,15 +17,17 @@ urlpatterns = [
     path('remove_from_wishlist/<int:product_id>/<int:variant_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('update_cart/<int:item_id>/<int:new_quantity>/', views.update_cart_quantity, name='update_cart'),
     path('remove_cart_item/<int:itemid>/',views.remove_cart_item,name="remove_cart_item"),
-    path(' cart_order/',views. cart_order,name=" cart_order"),
+    path('cart_order/',views.cart_order,name="cart_order"),
     path('remove_cartorder_item/<int:itemid>/',views.remove_cart_item,name="remove_cartorder_item"),
     path('get_address_details/<int:address_id>/', views.get_address_details, name='get_address_details'),
     path('checkout/', views.checkout,name="checkout"),
+    path('razorpay_initiate_payment/', views.initiate_razorpay_payment, name='razorpay_initiate_payment'),
     path('product_checkout/',views.product_checkout,name="product_checkout"),
     path('singleproduct_checkout/',views.singleproduct_checkout,name="singleproduct_checkout"),
     path('user_orders/',views.user_orders, name="user_orders"),
     path('order_detail/<str:oid>/', views.order_detail,name="order_detail"),
     path('cancel_order/',views.cancel_order, name="cancel_order"),
+    path('wallet/',views.wallet,name="wallet"),
 
 
 

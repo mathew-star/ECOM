@@ -1,18 +1,24 @@
 from django.shortcuts import render, redirect
+import json
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 from decimal import Decimal
+import razorpay
+
+
 
 def cart_count(request):
    if request.user.is_authenticated:
@@ -331,6 +337,11 @@ def remove_cartorder_item(request, itemid):
 
 def cart_order(request):
     user = request.user
+    
+    try:
+         user_wallet = Wallet_user.objects.get(user=user)
+    except:
+        pass
     address= Address.objects.filter(user=user)
     cart_items = cartitems.objects.filter(user=request.user)
     bag_count= cartitems.objects.filter(user=request.user).count()
@@ -346,7 +357,8 @@ def cart_order(request):
         'cart_items' : cart_items,
         'total_price':total_price,
         'address':address,
-        'first_address':first_address
+        'first_address':first_address,
+        'user_wallet':user_wallet,
     }
     return render(request,"users/checkout.html",context)
 
@@ -375,6 +387,43 @@ def get_address_details(request, address_id):
         return JsonResponse({'error': str(e)}, status=500)
     
 
+
+
+
+
+
+@csrf_exempt
+def initiate_razorpay_payment(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            total_price_in_paisa = float(data.get('total_price', 0)) * 100
+            user_id = data.get('user', '')
+            address_id = data.get('address_id', '')
+
+
+            if not isinstance(total_price_in_paisa, (int, float)):
+                raise ValueError("Invalid totalPrice provided.")
+            
+            print(settings.RAZORPAY_KEY)
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+
+            r_order = client.order.create({
+                'amount': int(total_price_in_paisa),
+                'currency': 'INR',
+                'payment_capture': 1
+            })
+
+
+            return JsonResponse({'status': 'success', 'order_id': r_order['id'],'amount':r_order['amount'] })
+        except Exception as e:
+            # Log the error for debugging
+            print("Error:", str(e))
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method.'}, status=400)
+    
+
 def singleproduct_checkout(request):
         
         if request.method == 'POST':
@@ -383,7 +432,7 @@ def singleproduct_checkout(request):
             variant_id= request.POST['variant_id']
             quantity= request.POST['quantity']
             print (quantity)
-            user= request.user
+        user = request.user
         address= Address.objects.filter(user=user)
         first_address = address.first()
         product = MyProducts.objects.get(id=product_id)
@@ -417,7 +466,16 @@ def product_checkout(request):
         variant_id = request.POST.get('varaint_id')
         total_price = request.POST.get('total_price')
         quantity = request.POST.get('quantity')
+        payment= request.POST.get('selected_payment_option')
+        if address_id:
+            selected_address = Address.objects.get(id=address_id)
+        else:
+            messages.warning(request,"Add a Address")
+            return redirect('singleproduct_checkout')
+
+
         quantity=int(quantity)
+
     print(quantity, total_price, address_id)
     selected_address = Address.objects.get(id=address_id)
     product=MyProducts.objects.get(id=product_id)
@@ -449,7 +507,7 @@ def product_checkout(request):
         order_address= address,
         total_price=total_price,
         order_status=OrderStatus.objects.get(status='Pending'),
-        payment='COD' 
+        payment=payment
     )
     else:
         order_address= OrderAddress(
@@ -470,14 +528,20 @@ def product_checkout(request):
             order_address=order_address,
             total_price=total_price,
             order_status=OrderStatus.objects.get(status='Pending'),
-            payment='COD' 
+            payment=payment
         )
     OrderItem.objects.create(order=order, variant=variant, quantity=quantity)
 
     variant.quantity -= quantity
     variant.save()
 
-    return redirect('user_orders')
+    o_items= OrderItem.objects.get(order=order)
+
+    context={
+        'order_items':o_items,
+        'order':order,
+    }
+    return render(request , "users/order_confirm.html",context)
 
 
     
@@ -485,13 +549,19 @@ def checkout(request):
     user = request.user
     if request.method == 'POST':
         address_id = request.POST.get('address_id') 
+        payment= request.POST.get('selected_payment_option')
     if address_id:
         selected_address = Address.objects.get(id=address_id)
     else:
         messages.warning(request,"Add a Address")
-        return render(request, "users/checkout.html")
+        return redirect('cart_order')
+    print(payment)
+    
+    try:
+        w_user = Wallet_user.objects.get(user=user)
+    except ObjectDoesNotExist:
+        w_user = None
 
-        
     cart_items = cartitems.objects.filter(user=request.user)
     total_price = sum([item.total_price for item in cart_items])
 
@@ -521,7 +591,7 @@ def checkout(request):
         order_address= address,
         total_price=total_price,
         order_status=OrderStatus.objects.get(status='Pending'),
-        payment='COD' 
+        payment=payment 
     )
     else:
         order_address= OrderAddress(
@@ -542,20 +612,40 @@ def checkout(request):
             order_address=order_address,
             total_price=total_price,
             order_status=OrderStatus.objects.get(status='Pending'),
-            payment='COD' 
+            payment= payment
         )
 
 
     for item in cart_items:
-        OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
-
+        order_items= OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
         variant = get_object_or_404(Variant, id=item.variant.id)
         variant.quantity -= item.quantity
         variant.save()
-
     
-    messages.success(request, 'Order placed successfully!')
-    return redirect('user_orders')
+    if payment == 'Wallet' and w_user:
+            if w_user.amount >= total_price:
+                w_user.amount -= total_price
+                w_user.save()
+
+                WalletHistory.objects.create(
+                    user=user,
+                    amount=total_price,
+                    transaction_type='debit'
+                )
+            else:
+                messages.error(request, "Insufficient funds in your wallet.")
+                return redirect('cart_order')
+
+    if payment == 'Online' or payment=='Wallet':
+        order.payment_status = "Paid"
+        order.save
+
+    o_items= OrderItem.objects.filter(order=order)
+    context={
+        'order_items':o_items,
+        'order':order,
+    }
+    return render(request , "users/order_confirm.html",context)
 
 def user_orders(request):
   cart_items = cartitems.objects.filter(user=request.user)
@@ -596,6 +686,16 @@ def order_detail(request, oid):
 #     order.delete()
 #     return redirect('userprofile')
 
+def wallet(request):
+    wallet_user = Wallet_user.objects.get(user=request.user)
+    wallet_history = WalletHistory.objects.filter(user=request.user)
+    print(wallet_user.amount)
+    w_amount= wallet_user.amount
+    context={' wallet_user':wallet_user,'wallet_history':wallet_history,'w_amount':w_amount}
+    return render(request, "users/wallet.html",context)
+
+
+
 def cancel_order(request):
     if request.method == "POST":
         oid = request.POST.get('order_id')
@@ -609,6 +709,18 @@ def cancel_order(request):
 
         order.order_status = OrderStatus.objects.get(status='Canceled')
         order.save()
+
+        if order.payment == 'Wallet' or order.payment == 'Online':
+            user_wallet = Wallet_user.objects.get(user=request.user)
+            user_wallet.amount += order.total_price
+            user_wallet.save()
+
+            # Log the wallet addition in WalletHistory
+            WalletHistory.objects.create(
+                user=request.user,
+                amount=order.total_price,
+                transaction_type='credit',
+            )
 
         return redirect('user_orders')
 

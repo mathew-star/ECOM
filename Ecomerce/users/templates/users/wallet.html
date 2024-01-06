@@ -1,0 +1,89 @@
+{% extends "users/ubase.html" %}
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static "css/userprofile.css" %} ">
+
+{% endblock %}
+
+
+
+{% block main %}
+  <div class="container-fluid">
+    {% for message in messages %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+
+    <div class="col-md-4 d-flex " id="profile-card">
+      <i class="fa-solid fa-circle-user fa-2xl" style="color: #000000; margin-top: 20px; margin-left: 8px;"></i>
+      <div class="DxGiT2 ">
+        <div class="_2QZ3Er mb-2" style="margin-left: 10px; font-size: 0.6rem">Hello</div>
+        <div class="_1ruvv2 ms-2" style="font-size: 1rem">{{ user.name }}</div>
+      </div>
+    </div>
+
+    <nav id="sidebar" class="col-md-4 d-md-block sidebar">
+      <div class="position-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-heart icon "></i>Wishlist
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-shopping-cart icon"></i>My Cart
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url "wallet" %}">
+              <i class="fas fa-wallet icon"></i> My Wallet
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url "user_orders" %}">
+              <i class="fas fa-clipboard-list icon"></i>My Orders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-reply icon"></i>Returns
+            </a>
+          </li>
+        </ul>
+        <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+      </div>
+    </nav>
+
+    <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
+      <div class="cart-items col-lg-8">
+        <div style="max-width: 400px; margin: 20px auto; background-color: #fff; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+          <div style="padding: 20px;">
+            <h3 style="color: #007bff; margin-bottom: 15px;">Your Wallet Balance</h3>
+            <div style="font-size: 28px; font-weight: bold; color: #28a745; margin-bottom: 20px;">{{ w_amount }} Rs</div>
+            <p style="color: #6c757d;">Keep track of your wallet balance for easy and quick payments.</p>
+          </div>
+        </div>
+
+        <!-- Display Wallet History -->
+        <div>
+          <h4>Wallet History</h4>
+          <ul>
+            {% for history in wallet_history %}
+              <li>
+                {{ history.date }} -
+                {% if history.transaction_type == 'credit' %}
+                  <span style="color: green;">Credit: +{{ history.amount }}</span>
+                {% elif history.transaction_type == 'debit' %}
+                  <span style="color: red;">Debit: -{{ history.amount }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </main>
+  </div>
+{% endblock %}

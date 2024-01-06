@@ -24,38 +24,38 @@
         </div>
       </div>
 
-    <nav id="sidebar" class="col-md-4 d-md-block sidebar">
-      <div class="position-sticky">
-        <ul class="nav flex-column">
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-heart icon "></i>Wishlist
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url "cartitems_list" %}">
-              <i class="fas fa-shopping-cart icon"></i>My Cart
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-wallet icon"></i> My Wallet
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url "user_orders" %}">
-              <i class="fas fa-clipboard-list icon"></i>My Orders
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-reply icon"></i>Returns
-            </a>
-          </li>
-        </ul>
-        <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
-      </div>
-    </nav>
+      <nav id="sidebar" class="col-md-4 d-md-block sidebar">
+        <div class="position-sticky">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <i class="fas fa-heart icon "></i>Wishlist
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <i class="fas fa-shopping-cart icon"></i>My Cart
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url "wallet" %}">
+                <i class="fas fa-wallet icon"></i> My Wallet
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url "user_orders" %}">
+                <i class="fas fa-clipboard-list icon"></i>My Orders
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <i class="fas fa-reply icon"></i>Returns
+              </a>
+            </li>
+          </ul>
+          <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+        </div>
+      </nav>
 
     <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
       <div class="container mt-3" style="height: 100vh;">

@@ -12,7 +12,7 @@
 </div>
 {% endfor %}
 
-  <section class="h-100 gradient-custom">
+<section class="h-100 gradient-custom">
     <div class="container py-5">
       <div class="row d-flex justify-content-center my-4">
     <div class="_3efVlV col-md-8">
@@ -124,44 +124,37 @@
               </div>
           </div>
       </div>
-            <div class="accordion mb-3" id="paymentAccordion">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="upiOptionHeader">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#upiOptions" aria-expanded="true" aria-controls="upiOptions">
-                        Payment Options
-                    </button>
-                </h2>
-                <div id="upiOptions" class="accordion-collapse collapse show" aria-labelledby="upiOptionHeader" data-bs-parent="#paymentAccordion">
-                    <div class="accordion-body d-flex flex-column mb-3">
-                        <!-- UPI Option Content -->
-                        <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
-                            <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
-                            
- 
-                        COD </label>
-                      <hr>
-
-                     <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww py-3">
-                          <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
-
-
-                      Wallet</label>
-                      <hr>
-                      <label for="UPI" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
-         
-                        <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="UPI">
-
-                      Online </label>
-                   
-                    </div>
-                </div>
+      <div class="accordion mb-3" id="paymentAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="paymentOptionHeader">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#paymentOptions" aria-expanded="true" aria-controls="paymentOptions">
+              Payment Options
+            </button>
+          </h2>
+          <div id="paymentOptions" class="accordion-collapse collapse show" aria-labelledby="paymentOptionHeader" data-bs-parent="#paymentAccordion">
+            <div class="accordion-body d-flex flex-column mb-3">
+              <!-- Your existing payment options -->
+              <label for="COD" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
+                <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="COD" value="COD" onclick="showPaymentButton('COD')">
+                COD
+              </label>
+              <hr>
+              <label for="Wallet" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww py-3">
+                <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="Wallet" value="Wallet" onclick="showPaymentButton('Wallet')">
+                Wallet
+              </label>
+              <hr>
+              <label for="Online" class="_2Fn-Ln _30jOKh _2KEUG6 _18Z3T6 _3L7Pww">
+                <input type="radio" class="_3DAmyP" name="paymentOption" readonly="" id="Online" value="Online" onclick="showPaymentButton('Online')">
+                Online
+              </label>
             </div>
-
           </div>
+        </div>
       </div>
-
-      <div class="col-md-4">
-        <div class="card mb-4" style="border-radius: 0%;">
+      
+      <div class="col-md-12 " style="width: 100vw; background-color: white;">
+        <div class=" mb-4" style="border-radius: 0%;">
           <div class="card-header py-3">
             <h5 class="mb-0">Summary</h5>
           </div>
@@ -192,19 +185,114 @@
             <form id="addressForm" method="POST" action="{% url 'checkout' %}">
               {% csrf_token %}
               <input type="hidden" name="address_id" id="address_id" value="">
-              <button type="submit" class="btn btn-primary">Place Order</button>
+              <input type="hidden" name="selected_payment_option" id="selected_payment_option" value="">
+              <div id="walletPayment" style="display: none;">
+                <strong id="walletAmount"></strong>
+                <button type="button" class="btn btn-primary" onclick="payWithWallet()">Pay with Wallet</button>
+              </div>
+              <div id="codPayment" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="payWithCOD()">Pay with COD</button>
+              </div>
+
+              <div id="razorpayPayment" style="display: none;">
+                <button type="button" class="btn btn-primary" id="onlinePay">Pay with Razor pay</button>
+              </div>
           </form>
+
           </div>
         </div>
       </div>
 
     </div>
-    </div>
+    
+  </div>
+
   </section>
 
 {% endblock  %}
 
 {% block script %}
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function submitForm() {
+    var form = document.getElementById('addressForm');
+    form.submit();
+  }
+
+  function payWithCOD(){
+    submitForm()
+  }
+  function payWithWallet(){
+    submitForm()
+  }
+
+  window.addEventListener("load", (event) => {
+    console.log("page is fully loaded");
+  });
+
+  document.getElementById('onlinePay').addEventListener('click', function () {
+    // Make a fetch request to your server
+    fetch('{% url "razorpay_initiate_payment" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}', // Add CSRF token if your project uses CSRF protection
+      },
+      body: JSON.stringify({
+        address_id: "{{ selected_address.id }}", // Add other necessary data
+        cart_items: "{{ cart_items }}",
+        user: "{{ user.id }}",
+        total_price: "{{ total_price }}",
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+
+        var options = {
+          "key": 'rzp_test_hjG9C59EJBeKxG',
+          "amount": data.amount,
+          "currency": 'INR',
+          "name": "AtheletHaven",
+          "description": "Purchases",
+          "order_id": data.order_id,
+          "handler": function (response) {
+              console.log(response);
+              submitForm();
+          },
+          "theme": {
+              "color": "#3399cc"
+          },
+          "payment_method": {
+              "netbanking": true,
+              "upi": true // Include UPI as a payment option
+          }
+      };
+      
+
+        var rzp1 = new Razorpay(options);
+
+        rzp1.on('payment.failed', function (response) {
+          alert(response.error.code);
+          alert(response.error.description);
+          alert(response.error.source);
+          alert(response.error.step);
+          alert(response.error.reason);
+          alert(response.error.metadata.order_id);
+          alert(response.error.metadata.payment_id);
+        });
+        rzp1.open();
+      })
+      .catch(error => {
+        console.error('Error initiating Razorpay payment:', error);
+      });
+  });
+</script>
+
+
+
 <script>
   function updateDeliveryAddress() {
       var addressSelect = document.getElementById("addressSelect");
@@ -236,6 +324,49 @@
               console.error('Error fetching address details:', error);
           });
   }
-</script>
 
-{% endblock  %}
+
+
+
+
+
+
+  function showPaymentButton(paymentOption) {
+    var cod = document.getElementById("COD");
+    var wallet = document.getElementById("Wallet");
+    var online = document.getElementById("Online");
+
+    var codPayment = document.getElementById("codPayment");
+    var walletPayment = document.getElementById("walletPayment");
+    var razorpayPayment = document.getElementById("razorpayPayment");
+
+    document.getElementById('selected_payment_option').value = paymentOption;
+
+    if (codPayment && walletPayment && razorpayPayment) {
+
+      codPayment.style.display = "none";
+      walletPayment.style.display = "none";
+      razorpayPayment.style.display = "none";
+
+      if (paymentOption === 'COD') {
+        codPayment.style.display = "block";
+      } else if (paymentOption === 'Wallet') {
+        console.log("hi wallet")
+        walletPayment.style.display = "block";
+        var userWalletAmount = "{{ user_wallet.amount }}";
+        
+        console.log(userWalletAmount)
+        var walletAmountElement = document.getElementById("walletAmount");
+
+        if (walletAmountElement) {
+          walletAmountElement.innerHTML = `<strong>Wallet Amount:</strong> ${userWalletAmount}`;
+        }
+
+      } else if (paymentOption === 'Online') {
+        razorpayPayment.style.display = "block";
+
+      }
+    }
+  }
+</script>
+{% endblock %}
