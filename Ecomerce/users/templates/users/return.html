@@ -1,0 +1,133 @@
+{% extends "users/ubase.html" %}
+
+{% load static %}
+{% block css %}
+<link rel="stylesheet" href="{% static "css/userprofile.css" %} ">
+<style>
+  table {
+    width: 100%;
+    margin-top: 20px;
+}
+
+ th  {
+    border: 1px solid #dee2e6;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f8f9fa;
+}
+</style>
+
+{% endblock %}
+
+
+
+{% block main %}
+
+<div class="container-fluid">
+  {% for message in messages %}
+  <div class="alert alert-info alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+ {% endfor %}
+
+
+ <div class="col-md-4 d-flex " id="profile-card">
+    <i class="fa-solid fa-circle-user fa-2xl" style="color: #000000; margin-top: 20px; margin-left: 8px; "></i>
+      <div class="DxGiT2 ">
+        <div class="_2QZ3Er mb-2" style="margin-left:10px;  font-size:0.6rem">Hello</div>
+        <div class="_1ruvv2 ms-2" style="font-size:1rem"> {{user.name}} </div>
+        </div>
+      </div>
+
+    <nav id="sidebar" class="col-md-4 d-md-block sidebar">
+      <div class="position-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-heart icon "></i>Wishlist
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-shopping-cart icon"></i>My Cart
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url "wallet" %}">
+              <i class="fas fa-wallet icon"></i> My Wallet
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url "user_orders" %}">
+              <i class="fas fa-clipboard-list icon"></i>My Orders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-reply icon"></i>Returns
+            </a>
+          </li>
+        </ul>
+        <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+      </div>
+    </nav>
+
+    <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
+        <div class="cart-items col-lg-8">
+            <h2 class="mb-4">Return Order</h2>
+
+
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <h4>Order Items</h4>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Variant Color</th>
+              <th>Quantity</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order_item in order_items %}
+              <tr>
+                <td>{{ order_item.variant.product_id.name }}</td>
+                <td>{{ order_item.variant.color.name }}</td>
+                <td>{{ order_item.quantity }}</td>
+                <td>{{ order_item.variant.price }} Rs</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+            <form method="post" action="{% url 'order_return' order.order_id %} ">
+                {% csrf_token %}
+                
+                <!-- Add form fields as needed -->
+
+                <div class="mb-3">
+                    <label for="return_reason" class="form-label">Reason for Return</label>
+                    <textarea class="form-control" id="return_reason" name="return_reason" rows="3" required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit Return</button>
+            </form>
+
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+
+
+

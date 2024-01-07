@@ -1,0 +1,44 @@
+<!-- generate_coupon.html -->
+
+{% extends 'myadmin/adminbase.html' %}
+
+
+{% block main %}
+  <h2>Add Coupon</h2>
+  <form method="post" action="{% url 'generate_coupon' %}">
+    {% csrf_token %}
+    <label for="coupon_code">Coupon Code:</label>
+    <input type="text" name="coupon_code" id="couponCodeInput" value="" required>
+    <button type="button" onclick="generateCouponCode()">Generate Code</button>
+    <br>
+    <label for="name">Name:</label>
+    <input type="text" name="name" required>
+    <br>
+    <label for="expiry_date">Expiry Date:</label>
+    <input type="text" name="expiry_date" placeholder="YYYY-MM-DD HH:MM:SS" required>
+    <br>
+    <label for="min_purchase_amount">Minimum Purchase Amount:</label>
+    <input type="text" name="min_purchase_amount" required>
+    <br>
+    <label for="discount_percentage">Discount Percentage:</label>
+    <input type="text" name="discount_percentage" required>
+    <br>
+    <input type="submit" value="Generate Coupon">
+  </form>
+
+
+{% endblock %}
+
+
+{% block script %}
+<script>
+    function generateCouponCode() {
+      fetch('{% url "generate_coupon_code" %}')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('couponCodeInput').value = data.coupon_code;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+  </script>
+{% endblock %}

@@ -2,6 +2,8 @@
 from django.db import models
 from accounts.models import CustomUser
 from colorfield.fields import ColorField
+from django.utils import timezone
+
 class BlockedUser(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='blocked_user')
 

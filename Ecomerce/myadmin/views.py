@@ -1,5 +1,9 @@
+import random
+import string
 from django.shortcuts import render, redirect,get_object_or_404
+from django.utils import timezone
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login, authenticate,logout
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -11,7 +15,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
 from django.views.decorators.http import require_POST
-from users.models import Order, OrderStatus
+from users.models import Order, OrderStatus,MyCoupons
 
 
 from django.apps import apps
@@ -326,3 +330,49 @@ def update_order_status(request, orderid):
        return redirect('admin_orders')
 
    return render(request, 'admin_orders.html')
+
+
+def add_new_coupon(request):
+    if request.method == 'POST':
+        coupon_code = request.POST.get('coupon_code')
+        name = request.POST.get('name')
+        expiry_date = request.POST.get('expiry_date')
+        min_purchase_amount = request.POST.get('min_purchase_amount')
+        discount_percentage = request.POST.get('discount_percentage')
+
+        # Validate and save the coupon
+        try:
+            expiry_date = timezone.datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            return render(request, 'myadmin/Create_coupon.html', {'error': 'Invalid date format'})
+
+        MyCoupons.objects.create(
+            coupon_code=coupon_code,
+            name=name,
+            expiry_date=expiry_date,
+            min_purchase_amount=min_purchase_amount,
+            discount_percentage=discount_percentage
+        )
+
+        return redirect('myadmin/coupon_list')
+     
+    return render(request,"myadmin/Create_coupon.html")
+
+@csrf_exempt
+def generate_coupon_code(request):
+    if request.method == 'GET':
+        coupon_code = generate_unique_coupon_code()
+
+        return JsonResponse({'coupon_code': coupon_code})
+    else:
+        return JsonResponse({'error': 'Invalid request method'})
+
+def generate_unique_coupon_code():
+    code_length = 8
+    characters = string.ascii_letters + string.digits
+    coupon_code = ''.join(random.choice(characters) for i in range(code_length))
+    
+    while MyCoupons.objects.filter(code=coupon_code).exists():
+        coupon_code = ''.join(random.choice(characters) for i in range(code_length))
+    
+    return coupon_code

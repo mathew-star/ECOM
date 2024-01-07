@@ -56,7 +56,7 @@
             <img src="{{ category.image.url }}" class="card-img-top" alt="{{ category.name }}">
             <div class="card-body text-center">
               <div class="overlay"></div>
-              <h5 class="card-title text-black fw-3 fs-4">{{ category.name }}</h5>
+              <a href="{% url 'c_shop' category=category.name %}"><h5 class="card-title text-black fw-3 fs-4">{{ category.name }}</h5></a>
             </div>
           </div>
         </div>

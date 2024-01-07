@@ -4,6 +4,9 @@ from myadmin.models import MyProducts,Variant,Color,ProductImages
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 import random
+
+
+
 class Address(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -47,6 +50,27 @@ class whishlist(models.Model):
 
 
 
+
+class MyCoupons(models.Model):
+    coupon_code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=255)
+    created_date = models.DateTimeField(default=timezone.now)
+    expiry_date = models.DateTimeField()
+    min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_price = models.IntegerField()
+
+    def is_valid(self):
+        return timezone.now() < self.expiry_date
+
+class UserAppliedCoupon(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    coupon = models.ForeignKey(MyCoupons, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'coupon')
+
+
+
 class OrderStatus(models.Model):
     STATUS_CHOICES = [
     ('Pending', 'Pending'),
@@ -80,6 +104,8 @@ class OrderAddress(models.Model):
 class Order(models.Model):
     ORDER_ID_PREFIX = "OID-"
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    coupon_code = models.CharField(max_length=100,null=True, blank=True)
+    coupon_price = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     order_address =models.ForeignKey(OrderAddress,on_delete=models.CASCADE,related_name='orderaddress',null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -123,3 +149,15 @@ class WalletHistory(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_CHOICES)
     date = models.DateTimeField(auto_now_add=True)
+
+
+class Return(models.Model):
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Return #{self.id} - Order #{self.order.id}"
+    

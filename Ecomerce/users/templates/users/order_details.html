@@ -79,7 +79,7 @@
         <button class="btn btn-danger" data-toggle="modal" data-target="#cancelOrderModal">Cancel Order</button>
 
         {% elif order.order_status.status == 'Delivered' %}
-          <button class="btn btn-primary">Return Order</button>
+          <a href='{% url "o_return" order.order_id %}'  class="btn btn-primary">Return</a>
         {% endif %}
       </div>
     </div>

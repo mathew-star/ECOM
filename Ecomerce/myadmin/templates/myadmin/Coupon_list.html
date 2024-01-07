@@ -1,0 +1,31 @@
+
+
+{% extends 'myadmin/adminbase.html' %}
+
+{% block content %}
+  <h2>Coupon List</h2>
+  
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Coupon Code</th>
+        <th scope="col">Name</th>
+        <th scope="col">Expiry Date</th>
+        <th scope="col">Minimum Purchase Amount</th>
+        <th scope="col">Discount Percentage</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for coupon in coupons %}
+        <tr>
+          <td>{{ coupon.coupon_code }}</td>
+          <td>{{ coupon.name }}</td>
+          <td>{{ coupon.expiry_date }}</td>
+          <td>{{ coupon.min_purchase_amount }}</td>
+          <td>{{ coupon.discount_percentage }}%</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a href="{% url 'add_new_coupon' %}" class="btn btn-primary" >Add Coupon</a>
+{% endblock %}

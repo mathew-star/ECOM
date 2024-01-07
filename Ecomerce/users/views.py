@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 import json
+from django.http import Http404
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -7,7 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
@@ -26,6 +27,7 @@ def cart_count(request):
    else:
        bag_count = 0
    return {'bag_count': bag_count}
+
 
 def single_product(request,product_id):
     product = get_object_or_404(MyProducts, pk=product_id)
@@ -52,6 +54,18 @@ def single_product(request,product_id):
 #     }
 
 #     return JsonResponse(data)
+
+def search_product(request):
+  if request.method == "POST":
+      query_name = request.POST.get('name', None)
+      if query_name:
+          results = MyProducts.objects.filter(name__icontains=query_name)
+          if results:
+              product = results[0]
+              return redirect('single_product', product_id=product.pk)
+          
+  messages.warning(request,"No such product found !")  
+  return render(request, 'users/userhome.html')
 
 
 
@@ -107,7 +121,18 @@ def shop(request):
     images= ProductImages.objects.all()
     return render(request,'users/shop.html',{'products':products,'images':images})
 
-    
+
+def c_shop(request, category):
+   if request.user.is_authenticated == False:
+       return redirect('signup')
+
+   category = get_object_or_404(Category, name=category)
+   products = MyProducts.objects.filter(category=category)
+   images = ProductImages.objects.filter(product__in=products)
+
+   return render(request, 'users/shop.html', {'products': products, 'images': images})
+
+
 @login_required
 def userprofile(request):
     user = request.user
@@ -724,3 +749,40 @@ def cancel_order(request):
 
         return redirect('user_orders')
 
+
+
+def o_return(request, order_id):
+    try:
+        order = Order.objects.get(order_id=order_id)
+        order_items = OrderItem.objects.filter(order=order)
+
+        context = {
+            'order': order,
+            'order_items': order_items,
+        }
+
+        return render(request, 'users/return.html', context)
+    except Order.DoesNotExist:
+        raise Http404("Order does not exist")
+def order_return(request,order_id):
+    order = get_object_or_404(Order, order_id=order_id)
+    if request.method == "POST":
+        reason= request.POST.get('return_reason')
+        print(reason)
+ 
+        re_turn= Return.objects.create(
+            user=request.user,reason=reason,order=order
+        )
+
+        user_wallet = Wallet_user.objects.get(user=request.user)
+        user_wallet.amount += order.total_price
+        user_wallet.save()
+
+            # Log the wallet addition in WalletHistory
+        WalletHistory.objects.create(
+                user=request.user,
+                amount=order.total_price,
+                transaction_type='credit',
+            ) 
+
+        return redirect("user_orders") 
