@@ -153,7 +153,21 @@
         <div class=" mb-4" style="border-radius: 0%;">
           <div class="card-header py-3">
             <h5 class="mb-0">Summary</h5>
-          </div>
+          </div>{% if valid_coupons %}
+          <div>
+            <label for="couponSelect">Select Coupon:</label>
+            <select id="couponSelect" name="selected_coupon_id">
+                <option value="" selected disabled>Select a coupon</option>
+                
+                {% for coupon in valid_coupons %}
+                    <option value="{{ coupon.id }}" data-discount="{{ coupon.discount_price }}">
+                        {{ coupon.coupon_code }} - {{ coupon.discount_price }}/-
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
           <div class="card-body">
             <ul class="list-group list-group-flush">
               <li
@@ -173,14 +187,14 @@
                     <p class="mb-0">(including VAT)</p>
                   </strong>
                 </div>
-                <span><strong>{{ total_price }}-
+                <strong><span id="originalAmount" class="me-3">{{ total_price }}</span><span id="totalAmount"></span></strong> 
 
-                </strong></span>
               </li>
             </ul>
             <form id="checkoutform" method="POST" action="{% url 'product_checkout' %}">
               {% csrf_token %}
               <input type="hidden" name="address_id" id="address_id" value="">
+              <input type="hidden" name="selected_coupon_code" id="selectedCouponCode" value="">
               <input type="hidden" name="product_id" id="product_id" value="{{product.id}}">
               <input type="hidden" name="varaint_id" id="variant_id" value="{{variant.id}}">
               <input type="hidden" name="total_price" id="total_price" value="{{total_price}}">
@@ -188,6 +202,7 @@
               <input type="hidden" name="selected_payment_option" id="selected_payment_option" value="">
 
               <div id="walletPayment" style="display: none;">
+                <strong id="walletAmount"></strong>
                 <button type="button" class="btn btn-primary" onclick="payWithWallet()">Pay with Wallet</button>
               </div>
               <div id="codPayment" style="display: none;">
@@ -210,151 +225,196 @@
 
 {% block script %}
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function submitForm() {
+    var form = document.getElementById('checkoutform');
+    form.submit();
+  }
 
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script>
-  function submitForm() {
-      var form = document.getElementById('checkoutform');
-      form.submit();
-    }
-  
-    function payWithCOD(){
-      submitForm()
-    }
-    function payWithWallet(){
-      submitForm()
-    }
-  
-    window.addEventListener("load", (event) => {
-      console.log("page is fully loaded");
-    });
-  
-    document.getElementById('onlinePay').addEventListener('click', function () {
-      // Make a fetch request to your server
-      fetch('{% url "razorpay_initiate_payment" %}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': '{{ csrf_token }}', // Add CSRF token if your project uses CSRF protection
-        },
-        body: JSON.stringify({
-          address_id: "{{ selected_address.id }}", // Add other necessary data
-          cart_items: "{{ cart_items }}",
-          user: "{{ user.id }}",
-          total_price: "{{ total_price }}",
-        }),
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
-  
-          var options = {
-            "key": 'rzp_test_hjG9C59EJBeKxG',
-            "amount": data.amount,
-            "currency": 'INR',
-            "name": "AtheletHaven",
-            "description": "Purchases",
-            "order_id": data.order_id,
-            "handler": function (response) {
-                console.log(response);
-                submitForm();
-            },
-            "theme": {
-                "color": "#3399cc"
-            },
-            "payment_method": {
-                "netbanking": true,
-                "upi": true // Include UPI as a payment option
-            }
-        };
-        
-  
-          var rzp1 = new Razorpay(options);
-  
-          rzp1.on('payment.failed', function (response) {
-            alert(response.error.code);
-            alert(response.error.description);
-            alert(response.error.source);
-            alert(response.error.step);
-            alert(response.error.reason);
-            alert(response.error.metadata.order_id);
-            alert(response.error.metadata.payment_id);
-          });
-          rzp1.open();
-        })
-        .catch(error => {
-          console.error('Error initiating Razorpay payment:', error);
+  function payWithCOD(){
+    submitForm()
+  }
+  function payWithWallet(){
+    submitForm()
+  }
+
+  window.addEventListener("load", (event) => {
+    console.log("page is fully loaded");
+  });
+
+  document.getElementById('onlinePay').addEventListener('click', function () {
+    // Make a fetch request to your server
+    fetch('{% url "razorpay_initiate_payment" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}', // Add CSRF token if your project uses CSRF protection
+      },
+      body: JSON.stringify({
+        address_id: "{{ selected_address.id }}", // Add other necessary data
+        cart_items: "{{ cart_items }}",
+        user: "{{ user.id }}",
+        total_price: "{{ total_price }}",
+      }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+
+        var options = {
+          "key": 'rzp_test_hjG9C59EJBeKxG',
+          "amount": data.amount,
+          "currency": 'INR',
+          "name": "AtheletHaven",
+          "description": "Purchases",
+          "order_id": data.order_id,
+          "handler": function (response) {
+              console.log(response);
+              submitForm();
+          },
+          "theme": {
+              "color": "#3399cc"
+          },
+          "payment_method": {
+              "netbanking": true,
+              "upi": true // Include UPI as a payment option
+          }
+      };
+      
+
+        var rzp1 = new Razorpay(options);
+
+        rzp1.on('payment.failed', function (response) {
+          alert(response.error.code);
+          alert(response.error.description);
+          alert(response.error.source);
+          alert(response.error.step);
+          alert(response.error.reason);
+          alert(response.error.metadata.order_id);
+          alert(response.error.metadata.payment_id);
         });
-    });
-  </script>
-  
-  
-  
-  <script>
-    function updateDeliveryAddress() {
-        var addressSelect = document.getElementById("addressSelect");
-        var displayedAddress = document.getElementById("displayedAddress");
-        var addressIdInput = document.getElementById("address_id");  // Added this line
-  
-        // Get the selected address ID
-        var selectedAddressId = addressSelect.value;
-  
-        // Fetch the address details from the server
-        fetch(`/get_address_details/${selectedAddressId}`)
-            .then(response => response.json())
-            .then(data => {
-                // Display the fetched address details
-                displayedAddress.innerHTML = `
-                    <span>
-                        ${data.name}
-                        ${data.address}
-                        ${data.locality}
-                        ${data.city}
-                        ${data.state}
-                        ${data.pincode}<br>
-                        ${data.phone}
-                    </span>
-                `;
-                addressIdInput.value = selectedAddressId;  // Set the address ID
-            })
-            .catch(error => {
-                console.error('Error fetching address details:', error);
-            });
-    }
-  
-  
-  
-  
-  
-  
-  
-    function showPaymentButton(paymentOption) {
-      console.log(paymentOption)
-      var cod = document.getElementById("COD");
-      var wallet = document.getElementById("Wallet");
-      var online = document.getElementById("Online");
-  
-      var codPayment = document.getElementById("codPayment");
-      var walletPayment = document.getElementById("walletPayment");
-      var razorpayPayment = document.getElementById("razorpayPayment");
-  
-      document.getElementById('selected_payment_option').value = paymentOption;
-  
-      if (codPayment && walletPayment && razorpayPayment) {
-  
-        codPayment.style.display = "none";
-        walletPayment.style.display = "none";
-        razorpayPayment.style.display = "none";
-  
-        if (paymentOption === 'COD') {
-          codPayment.style.display = "block";
-        } else if (paymentOption === 'Wallet') {
-          walletPayment.style.display = "block";
-        } else if (paymentOption === 'Online') {
-          razorpayPayment.style.display = "block";
-  
+        rzp1.open();
+      })
+      .catch(error => {
+        console.error('Error initiating Razorpay payment:', error);
+      });
+  });
+</script>
+
+
+
+<script>
+  function updateDeliveryAddress() {
+      var addressSelect = document.getElementById("addressSelect");
+      var displayedAddress = document.getElementById("displayedAddress");
+      var addressIdInput = document.getElementById("address_id");  // Added this line
+
+      // Get the selected address ID
+      var selectedAddressId = addressSelect.value;
+
+      // Fetch the address details from the server
+      fetch(`/get_address_details/${selectedAddressId}`)
+          .then(response => response.json())
+          .then(data => {
+              // Display the fetched address details
+              displayedAddress.innerHTML = `
+                  <span>
+                      ${data.name}
+                      ${data.address}
+                      ${data.locality}
+                      ${data.city}
+                      ${data.state}
+                      ${data.pincode}<br>
+                      ${data.phone}
+                  </span>
+              `;
+              addressIdInput.value = selectedAddressId;  // Set the address ID
+          })
+          .catch(error => {
+              console.error('Error fetching address details:', error);
+          });
+  }
+
+
+
+
+
+
+
+  function showPaymentButton(paymentOption) {
+    var cod = document.getElementById("COD");
+    var wallet = document.getElementById("Wallet");
+    var online = document.getElementById("Online");
+
+    var codPayment = document.getElementById("codPayment");
+    var walletPayment = document.getElementById("walletPayment");
+    var razorpayPayment = document.getElementById("razorpayPayment");
+
+    document.getElementById('selected_payment_option').value = paymentOption;
+
+    if (codPayment && walletPayment && razorpayPayment) {
+
+      codPayment.style.display = "none";
+      walletPayment.style.display = "none";
+      razorpayPayment.style.display = "none";
+
+      if (paymentOption === 'COD') {
+        codPayment.style.display = "block";
+      } else if (paymentOption === 'Wallet') {
+        console.log("hi wallet")
+        walletPayment.style.display = "block";
+        var userWalletAmount = "{{ user_wallet.amount }}";
+        
+        console.log(userWalletAmount)
+        var walletAmountElement = document.getElementById("walletAmount");
+
+        if (walletAmountElement) {
+          walletAmountElement.innerHTML = `<strong>Wallet Amount:</strong> ${userWalletAmount}`;
         }
+
+      } else if (paymentOption === 'Online') {
+        razorpayPayment.style.display = "block";
+
       }
     }
-  </script>
+  }
+
+document.getElementById('couponSelect').addEventListener('change', function () {
+    var selectedCoupon = this.options[this.selectedIndex];
+    var couponId = selectedCoupon.value;
+    var selectedCouponCode = selectedCoupon.text.split(' - ')[0];
+
+    
+    fetch(`/get_coupon_discount/${couponId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if ('discount' in data) {
+                updateTotalAmount(data.discount);
+                document.getElementById('selectedCouponCode').value = selectedCouponCode;
+            } else if ('error' in data) {
+                console.error(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching coupon discount:', error);
+        });
+});
+
+function updateTotalAmount(discount) {
+    var totalAmountElement = document.getElementById('totalAmount');
+    var originalAmountElement = document.getElementById('originalAmount');
+    var currentTotalAmount = parseFloat(originalAmountElement.innerText);
+    let temp_total = currentTotalAmount
+
+    if (!isNaN(currentTotalAmount)) {
+      var newTotalAmount = currentTotalAmount - parseFloat(discount);
+
+      var originalAmountElement = document.getElementById('originalAmount');
+      originalAmountElement.style.textDecoration = 'line-through';
+
+      totalAmountElement.innerText = newTotalAmount.toFixed(2);
+    }
+}
+</script>
 {% endblock  %}

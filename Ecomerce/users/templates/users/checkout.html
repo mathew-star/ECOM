@@ -158,6 +158,20 @@
           <div class="card-header py-3">
             <h5 class="mb-0">Summary</h5>
           </div>
+          {% if valid_coupons %}
+          <div>
+            <label for="couponSelect">Select Coupon:</label>
+            <select id="couponSelect" name="selected_coupon_id">
+                <option value="" selected disabled>Select a coupon</option>
+                
+                {% for coupon in valid_coupons %}
+                    <option value="{{ coupon.id }}" data-discount="{{ coupon.discount_price }}">
+                        {{ coupon.coupon_code }} - {{ coupon.discount_price }}/-
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
           <div class="card-body">
             <ul class="list-group list-group-flush">
               <li
@@ -177,14 +191,14 @@
                     <p class="mb-0">(including VAT)</p>
                   </strong>
                 </div>
-                <span><strong>{{ total_price }}-
+              <strong><span id="originalAmount" class="me-3">{{ total_price }}</span><span id="totalAmount"></span></strong> 
 
-                </strong></span>
               </li>
             </ul>
             <form id="addressForm" method="POST" action="{% url 'checkout' %}">
               {% csrf_token %}
               <input type="hidden" name="address_id" id="address_id" value="">
+              <input type="hidden" name="selected_coupon_code" id="selectedCouponCode" value="">
               <input type="hidden" name="selected_payment_option" id="selected_payment_option" value="">
               <div id="walletPayment" style="display: none;">
                 <strong id="walletAmount"></strong>
@@ -368,5 +382,42 @@ function submitForm() {
       }
     }
   }
+
+document.getElementById('couponSelect').addEventListener('change', function () {
+    var selectedCoupon = this.options[this.selectedIndex];
+    var couponId = selectedCoupon.value;
+    var selectedCouponCode = selectedCoupon.text.split(' - ')[0];
+
+    
+    fetch(`/get_coupon_discount/${couponId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if ('discount' in data) {
+                updateTotalAmount(data.discount);
+                document.getElementById('selectedCouponCode').value = selectedCouponCode;
+            } else if ('error' in data) {
+                console.error(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching coupon discount:', error);
+        });
+});
+
+function updateTotalAmount(discount) {
+    var totalAmountElement = document.getElementById('totalAmount');
+    var originalAmountElement = document.getElementById('originalAmount');
+    var currentTotalAmount = parseFloat(originalAmountElement.innerText);
+    let temp_total = currentTotalAmount
+
+    if (!isNaN(currentTotalAmount)) {
+      var newTotalAmount = currentTotalAmount - parseFloat(discount);
+
+      var originalAmountElement = document.getElementById('originalAmount');
+      originalAmountElement.style.textDecoration = 'line-through';
+
+      totalAmountElement.innerText = newTotalAmount.toFixed(2);
+    }
+}
 </script>
 {% endblock %}

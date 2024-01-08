@@ -16,6 +16,11 @@
         <p><strong>Total Price:</strong> {{ order.total_price }} Rs</p>
         <p><strong>Payment Method:</strong> {{ order.payment }}</p>
         <p><strong>Order Status:</strong> {{ order.order_status.status }}</p>
+        {% if order.coupon_code %}
+        <h4>Coupon Details</h4>
+        <p><strong>Coupon Code:</strong> {{ order.coupon_code }}</p>
+        <p><strong>Discount Price:</strong> {{ order.coupon_price }} Rs</p>
+        {% endif %}
       </div>
 
       <div class="col-md-6">

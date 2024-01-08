@@ -1,37 +1,48 @@
-<!-- generate_coupon.html -->
-
 {% extends 'myadmin/adminbase.html' %}
 
-
 {% block main %}
-  <h2>Add Coupon</h2>
-  <form method="post" action="{% url 'generate_coupon' %}">
-    {% csrf_token %}
-    <label for="coupon_code">Coupon Code:</label>
-    <input type="text" name="coupon_code" id="couponCodeInput" value="" required>
-    <button type="button" onclick="generateCouponCode()">Generate Code</button>
-    <br>
-    <label for="name">Name:</label>
-    <input type="text" name="name" required>
-    <br>
-    <label for="expiry_date">Expiry Date:</label>
-    <input type="text" name="expiry_date" placeholder="YYYY-MM-DD HH:MM:SS" required>
-    <br>
-    <label for="min_purchase_amount">Minimum Purchase Amount:</label>
-    <input type="text" name="min_purchase_amount" required>
-    <br>
-    <label for="discount_percentage">Discount Percentage:</label>
-    <input type="text" name="discount_percentage" required>
-    <br>
-    <input type="submit" value="Generate Coupon">
-  </form>
+  <div class="container mt-5">
 
-
+    {% for message in messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+   {% endfor %}
+   
+    <h2 class="mb-4">Add Coupon</h2>
+    <form method="post" action="{% url 'add_new_coupon' %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="coupon_code" class="form-label">Coupon Code:</label>
+        <div class="input-group">
+          <input type="text" class="form-control" name="coupon_code" id="couponCodeInput" value="" required>
+          <button type="button" class="btn btn-secondary" onclick="generateCouponCode()">Generate Code</button>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="name" class="form-label">Name:</label>
+        <input type="text" class="form-control" name="name" required>
+      </div>
+      <div class="mb-3">
+        <label for="expiry_date" class="form-label">Expiry Date:</label>
+        <input type="date" class="form-control datepicker" name="expiry_date" placeholder="YYYY-MM-DD" autocomplete="off" required>
+      </div>
+      <div class="mb-3">
+        <label for="min_purchase_amount" class="form-label">Minimum Purchase Amount:</label>
+        <input type="text" class="form-control" name="min_purchase_amount" required>
+      </div>
+      <div class="mb-3">
+        <label for="discount_percentage" class="form-label">Discount price</label>
+        <input type="number" class="form-control" name="discount_price" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Generate Coupon</button>
+    </form>
+  </div>
 {% endblock %}
 
-
 {% block script %}
-<script>
+  <script>
     function generateCouponCode() {
       fetch('{% url "generate_coupon_code" %}')
         .then(response => response.json())
@@ -40,5 +51,6 @@
         })
         .catch(error => console.error('Error:', error));
     }
+
   </script>
 {% endblock %}

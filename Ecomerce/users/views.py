@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.db.models import Q
 import json
 from django.http import Http404
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return,MyCoupons,UserAppliedCoupon
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
@@ -65,7 +66,7 @@ def search_product(request):
               return redirect('single_product', product_id=product.pk)
           
   messages.warning(request,"No such product found !")  
-  return render(request, 'users/userhome.html')
+  return redirect('home')
 
 
 
@@ -367,6 +368,7 @@ def cart_order(request):
          user_wallet = Wallet_user.objects.get(user=user)
     except:
         pass
+    
     address= Address.objects.filter(user=user)
     cart_items = cartitems.objects.filter(user=request.user)
     bag_count= cartitems.objects.filter(user=request.user).count()
@@ -378,14 +380,32 @@ def cart_order(request):
     
 
     total_price = sum([item.total_price for item in cart_items])
+    valid_coupons = MyCoupons.objects.filter(
+        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+    )
+
     context={
         'cart_items' : cart_items,
         'total_price':total_price,
         'address':address,
         'first_address':first_address,
         'user_wallet':user_wallet,
+        'valid_coupons':valid_coupons,
     }
     return render(request,"users/checkout.html",context)
+
+
+
+def get_coupon_discount(request, coupon_id):
+    try:
+        coupon = MyCoupons.objects.get(id=coupon_id)
+        if coupon.is_valid():
+            return JsonResponse({'discount': coupon.discount_price})
+        else:
+            return JsonResponse({'error': 'Invalid coupon or expired'})
+    except MyCoupons.DoesNotExist:
+        return JsonResponse({'error': 'Coupon not found'})
+    
 
 
 
@@ -458,6 +478,12 @@ def singleproduct_checkout(request):
             quantity= request.POST['quantity']
             print (quantity)
         user = request.user
+
+        try:
+         user_wallet = Wallet_user.objects.get(user=user)
+        except:
+            pass
+
         address= Address.objects.filter(user=user)
         first_address = address.first()
         product = MyProducts.objects.get(id=product_id)
@@ -467,6 +493,10 @@ def singleproduct_checkout(request):
         print(quantity)
         price = Decimal(variant.price)
         total_price = price * Decimal(quantity)
+
+        valid_coupons = MyCoupons.objects.filter(
+        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+    )
 
         
         context={
@@ -478,6 +508,8 @@ def singleproduct_checkout(request):
             'quantity':quantity,
             'first_address':first_address,
             'address':address,
+            'user_wallet':user_wallet,
+            'valid_coupons':valid_coupons,
 
         }
         return render(request,"users/product_checkout.html",context)
@@ -490,8 +522,11 @@ def product_checkout(request):
         product_id = request.POST.get('product_id')
         variant_id = request.POST.get('varaint_id')
         total_price = request.POST.get('total_price')
+        total_price = float(total_price)
         quantity = request.POST.get('quantity')
         payment= request.POST.get('selected_payment_option')
+        coupon_code=request.POST.get('selected_coupon_code')
+        
         if address_id:
             selected_address = Address.objects.get(id=address_id)
         else:
@@ -500,8 +535,21 @@ def product_checkout(request):
 
 
         quantity=int(quantity)
+        total_price = round(total_price)
+    
+    try:
+        w_user = Wallet_user.objects.get(user=user)
+    except ObjectDoesNotExist:
+        w_user = None
 
-    print(quantity, total_price, address_id)
+    if coupon_code:
+        coupon=MyCoupons.objects.get(coupon_code=coupon_code)
+        if coupon.is_disabled == False:
+            total_price=total_price-coupon.discount_price
+        else:
+            messages.info(request,'This Coupon is not valid now!')
+            return redirect('singleproduct_checkout')
+
     selected_address = Address.objects.get(id=address_id)
     product=MyProducts.objects.get(id=product_id)
     variant=Variant.objects.get(id=variant_id)
@@ -554,13 +602,41 @@ def product_checkout(request):
             total_price=total_price,
             order_status=OrderStatus.objects.get(status='Pending'),
             payment=payment
-        )
-    OrderItem.objects.create(order=order, variant=variant, quantity=quantity)
+        )   
+        
+    if coupon_code:
+        order.coupon_code = coupon_code
+        order.coupon_price = coupon.discount_price
+        order.save()
 
+    
+    OrderItem.objects.create(order=order, variant=variant, quantity=quantity)
     variant.quantity -= quantity
     variant.save()
 
+
+    if payment == 'Wallet' and w_user:
+        if w_user.amount >= total_price:
+    
+                w_user.amount -= total_price
+                w_user.save()
+
+                WalletHistory.objects.create(
+                    user=user,
+                    amount=total_price,
+                    transaction_type='debit'
+                )
+        else:
+                messages.error(request, "Insufficient funds in your wallet.")
+                return redirect('singleproduct_checkout')
+        
+
+    if payment == 'Online' or payment=='Wallet':
+        order.payment_status = "Paid"
+        order.save
+
     o_items= OrderItem.objects.get(order=order)
+
 
     context={
         'order_items':o_items,
@@ -571,16 +647,18 @@ def product_checkout(request):
 
     
 def checkout(request):
+
     user = request.user
     if request.method == 'POST':
         address_id = request.POST.get('address_id') 
         payment= request.POST.get('selected_payment_option')
+        coupon_code=request.POST.get('selected_coupon_code')
     if address_id:
         selected_address = Address.objects.get(id=address_id)
     else:
         messages.warning(request,"Add a Address")
         return redirect('cart_order')
-    print(payment)
+    
     
     try:
         w_user = Wallet_user.objects.get(user=user)
@@ -589,6 +667,15 @@ def checkout(request):
 
     cart_items = cartitems.objects.filter(user=request.user)
     total_price = sum([item.total_price for item in cart_items])
+
+
+    if coupon_code:
+        coupon=MyCoupons.objects.get(coupon_code=coupon_code)
+        if coupon.is_disabled == False:
+            total_price=total_price-coupon.discount_price
+        else:
+            messages.info(request,'This Coupon is not valid now!')
+            return redirect('cart_order')
 
     existing_address = OrderAddress.objects.filter(
             user=user,
@@ -640,6 +727,11 @@ def checkout(request):
             payment= payment
         )
 
+    if coupon_code:
+        order.coupon_code = coupon_code
+        order.coupon_price = coupon.discount_price
+        order.save()
+
 
     for item in cart_items:
         order_items= OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
@@ -671,6 +763,7 @@ def checkout(request):
         'order':order,
     }
     return render(request , "users/order_confirm.html",context)
+
 
 def user_orders(request):
   cart_items = cartitems.objects.filter(user=request.user)

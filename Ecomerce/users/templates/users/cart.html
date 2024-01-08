@@ -160,11 +160,6 @@
     
        <div class="order-summary col-lg-4">
            <h2>Order Summary</h2>
-           <div class="coupon-code">
-            <label for="coupon">Apply Coupon Code:</label>
-            <input type="text" id="coupon" class="form-control" placeholder="Enter coupon code">
-            <button class="btn btn-primary mt-2">Apply</button>
-        </div>
            <p id="subtotal">Subtotal: {{ total_price }}Rs</p>
            <p id="total-price">Total: {{ total_price }} Rs</p>
            <a href="{% url 'cart_order' %}" class="btn btn-success mt-3">Proceed to Checkout</a>       </div>

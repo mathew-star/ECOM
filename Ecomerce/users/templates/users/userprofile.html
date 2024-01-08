@@ -28,12 +28,12 @@
         <div class="position-sticky">
           <ul class="nav flex-column">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="{% url "wishlist" %}">
                 <i class="fas fa-heart icon "></i>Wishlist
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="{% url "cartitems_list" %}">
                 <i class="fas fa-shopping-cart icon"></i>My Cart
               </a>
             </li>
@@ -56,7 +56,7 @@
           <button id="logout-btn" class="btn btn-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
         </div>
       </nav>
-
+      
     <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
       <div class="container mt-3" style="height: 100vh;">
 

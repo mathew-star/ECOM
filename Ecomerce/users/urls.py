@@ -32,9 +32,11 @@ urlpatterns = [
     path('return/<str:order_id>/',views.o_return, name="o_return"),
     path('order_return/<str:order_id>/',views.order_return,name='order_return'),
     path('wallet/',views.wallet,name="wallet"),
-
-
-
-
+    path('get_coupon_discount/<int:coupon_id>/', views.get_coupon_discount, name='get_coupon_discount'),
 ]
+
+
+
+
+
     

@@ -1,8 +1,8 @@
 
-
 {% extends 'myadmin/adminbase.html' %}
 
-{% block content %}
+{% block main %}
+ <div class="container">
   <h2>Coupon List</h2>
   
   <table class="table">
@@ -10,9 +10,10 @@
       <tr>
         <th scope="col">Coupon Code</th>
         <th scope="col">Name</th>
+        <th scope="col">Created Date</th>
         <th scope="col">Expiry Date</th>
         <th scope="col">Minimum Purchase Amount</th>
-        <th scope="col">Discount Percentage</th>
+        <th scope="col">Discount Price</th>
       </tr>
     </thead>
     <tbody>
@@ -20,12 +21,17 @@
         <tr>
           <td>{{ coupon.coupon_code }}</td>
           <td>{{ coupon.name }}</td>
+          <td>
+            {{ coupon.created_date|date:"F j, Y" }}
+            </td>
           <td>{{ coupon.expiry_date }}</td>
           <td>{{ coupon.min_purchase_amount }}</td>
-          <td>{{ coupon.discount_percentage }}%</td>
+          <td>{{ coupon.discount_price }}</td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
   <a href="{% url 'add_new_coupon' %}" class="btn btn-primary" >Add Coupon</a>
+
+ </div>
 {% endblock %}

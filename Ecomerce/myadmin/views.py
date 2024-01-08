@@ -338,41 +338,64 @@ def add_new_coupon(request):
         name = request.POST.get('name')
         expiry_date = request.POST.get('expiry_date')
         min_purchase_amount = request.POST.get('min_purchase_amount')
-        discount_percentage = request.POST.get('discount_percentage')
+        discount_price = request.POST.get('discount_price')
 
-        # Validate and save the coupon
+        # Basic validation checks
+        if not coupon_code or not name or not expiry_date or not min_purchase_amount or not discount_price:
+            messages.error(request, 'All fields are required. Please fill in all the details.')
+            return render(request, 'myadmin/Create_coupon.html')
+
         try:
-            expiry_date = timezone.datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S")
+            # Adjust the format to match the date-only input
+            expiry_date = timezone.datetime.strptime(expiry_date, "%Y-%m-%d").date()
         except ValueError:
-            return render(request, 'myadmin/Create_coupon.html', {'error': 'Invalid date format'})
+            messages.error(request, 'Invalid date format. Please use the YYYY-MM-DD format.')
+            return render(request, 'myadmin/Create_coupon.html')
+  
+        if discount_price > min_purchase_amount:
+            messages.warning(request,'Discount price should be less than or equal to the minimum purchase amount')
+            return render(request, 'myadmin/Create_coupon.html')
+        
+        if expiry_date <= timezone.now().date():
+            messages.error(request, 'Expiry date must be in the future.')
+            return render(request, 'myadmin/Create_coupon.html')
 
         MyCoupons.objects.create(
             coupon_code=coupon_code,
             name=name,
             expiry_date=expiry_date,
             min_purchase_amount=min_purchase_amount,
-            discount_percentage=discount_percentage
+            discount_price=discount_price
         )
 
-        return redirect('myadmin/coupon_list')
-     
-    return render(request,"myadmin/Create_coupon.html")
+        messages.success(request, 'Coupon created successfully!')
+        return redirect('coupon_list')
+
+    return render(request, 'myadmin/Create_coupon.html')
+
+def coupon_list(request):
+    coupons = MyCoupons.objects.all()
+    return render(request,'myadmin/Coupon_list.html',{'coupons':coupons })
+
 
 @csrf_exempt
 def generate_coupon_code(request):
     if request.method == 'GET':
+
         coupon_code = generate_unique_coupon_code()
+        print(coupon_code)
 
         return JsonResponse({'coupon_code': coupon_code})
     else:
         return JsonResponse({'error': 'Invalid request method'})
-
+    
 def generate_unique_coupon_code():
+
     code_length = 8
     characters = string.ascii_letters + string.digits
     coupon_code = ''.join(random.choice(characters) for i in range(code_length))
     
-    while MyCoupons.objects.filter(code=coupon_code).exists():
+    while MyCoupons.objects.filter(coupon_code=coupon_code).exists():
         coupon_code = ''.join(random.choice(characters) for i in range(code_length))
-    
+
     return coupon_code
