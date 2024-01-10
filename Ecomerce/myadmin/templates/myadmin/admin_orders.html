@@ -41,7 +41,7 @@
       <tbody>
           {% for order in orders %}
               <tr>
-                  <td>{{ order.order_id }}</td>
+                  <a href="{% url "order_view" oid=order.order_id %}"><td>{{ order.order_id }}</td></a>
                   <td>{{ order.created_at|date:"D d M Y" }}</td>
                   <td>{{ order.total_price }}</td>
                   <td>
@@ -59,14 +59,18 @@
                   </td>
                   <td> 
                     <button type="submit" form="updateOrderStatusForm{{ order.id }}">Update Status</button>
+                    <a href="{% url "order_view" oid=order.order_id %}" class="ms-4">view</a>
                 </form>
                   </td>
+                  
               </tr>
           {% endfor %}
       </tbody>
     </table>
     </div>
 {% endblock %}
+
+
 {% block script %}
 <script>
 

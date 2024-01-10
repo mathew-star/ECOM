@@ -2,12 +2,65 @@
 {% extends "users/ubase.html" %}
 {% load static %}
 {% block css %}
+<style>
+    .filter {
+        padding: 20px;
+        margin: 0 ;
+        width: 20%;
+        display: flex;
+     }
+     .Apply {
+        background-color:grey; 
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+     }
+     select {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        background-color: #f1f1f1;
+        font-size: 16px;
+     }
+     .Apply:hover {
+        opacity: 0.8;
+        border: 1px solid black;
+     }
+     
+     select:hover {
+        background-color: lightgray;
+        
+     }
+                    
+</style>
+
 <link rel="stylesheet" href="{% static "css/hstyle.css" %} ">
 {% endblock %}
 
 {% block main %}
 <div class="container mt-5">
     <h2 class="text-center m-3">Our Products</h2>
+    {% if category %}
+    <form class="filter" method="get" action="{% url 'c_shop' category.name %}">
+    {% else %}
+    <form class="filter" method="get" action="{% url 'shop' %}">
+        {% endif %}
+        <select name="sort">
+            <option value="default">Default</option>
+            <option value="low_to_high">Low to High Price</option>
+            <option value="high_to_low">High to Low Price</option>
+        </select>
+        <button class="btn Apply ms-3" type="submit" >Apply</button>
+    </form>
+
+
     <div class="row mt-4">
         <!-- Product 1 -->
         {% for product in products %}

@@ -114,6 +114,7 @@
   <div class="col-md-6 address-card">
     <div class="card" style="border-radius: 10px;">
       <div class="card-body">
+        <a href="{% url 'remove_address' addres.id %}" style="float: right; margin-left: 10px;" ><i class="fa-solid fa-trash" style="color: #000000;"></i></a>
         <a href="{% url 'edit_address' address_id=addres.id %}" style="float: right;"><i class="fas fa-edit"></i></a>
         <strong>Address 1:</strong><br>
         

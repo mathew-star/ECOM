@@ -1,0 +1,63 @@
+{% extends 'myadmin/adminbase.html' %}
+
+{% block css %}
+<style>
+
+</style>
+{% endblock %}
+{% block main %}
+<div class="container mt-5">
+    <h2>Order Details</h2>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <h4>Order Information</h4>
+        <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+        <p><strong>Total Price:</strong> {{ order.total_price }} Rs</p>
+        <p><strong>Payment Method:</strong> {{ order.payment }}</p>
+        <p><strong>Order Status:</strong> {{ order.order_status.status }}</p>
+        {% if order.coupon_code %}
+        <h4>Coupon Details</h4>
+        <p><strong>Coupon Code:</strong> {{ order.coupon_code }}</p>
+        <p><strong>Discount Price:</strong> {{ order.coupon_price }} Rs</p>
+        {% endif %}
+      </div>
+
+      <div class="col-md-6">
+        <h4>Shipping Address</h4>
+        <p><strong>Name:</strong> {{ order.order_address.name }}</p>
+        <p><strong>Phone:</strong> {{ order.order_address.phone }}</p>
+        <p><strong>Address:</strong> {{ order.order_address.address }}, {{ order.order_address.locality }}, {{ order.order_address.city }}, {{ order.order_address.state }} - {{ order.order_address.pincode }}</p>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <h4>Order Items</h4>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Variant Color</th>
+              <th>Quantity</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order_item in order_items %}
+              <tr>
+                <td>{{ order_item.variant.product_id.name }}</td>
+                <td>{{ order_item.variant.color.name }}</td>
+                <td>{{ order_item.quantity }}</td>
+                <td>{{ order_item.variant.price }} Rs</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+   
+
+{% endblock %}
+

@@ -2,11 +2,14 @@ from django.shortcuts import render, redirect
 from django.db.models import Q
 import json
 from django.http import Http404
+from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from reportlab.pdfgen import canvas
+from io import BytesIO
 from myadmin.models import BlockedUser
 from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
 from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return,MyCoupons,UserAppliedCoupon
@@ -19,6 +22,11 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from decimal import Decimal
 import razorpay
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from io import BytesIO
 
 
 
@@ -118,20 +126,46 @@ def shop(request):
     if request.user.is_authenticated == False:
         return redirect('signup')
     
-    products= MyProducts.objects.all()
-    images= ProductImages.objects.all()
+    sort_option = request.GET.get('sort', 'default')
+
+    images = ProductImages.objects.all()  # Move this line outside of the else block
+
+    if sort_option == 'low_to_high':
+        products = MyProducts.objects.all().order_by('variant__price').distinct()
+    elif sort_option == 'high_to_low':
+        products = MyProducts.objects.all().order_by('-variant__price').distinct()
+    else:
+        products = MyProducts.objects.all().distinct()
+    
+    
+    
     return render(request,'users/shop.html',{'products':products,'images':images})
 
 
 def c_shop(request, category):
-   if request.user.is_authenticated == False:
+    if request.user.is_authenticated == False:
        return redirect('signup')
 
-   category = get_object_or_404(Category, name=category)
-   products = MyProducts.objects.filter(category=category)
-   images = ProductImages.objects.filter(product__in=products)
+    category = get_object_or_404(Category, name=category)
 
-   return render(request, 'users/shop.html', {'products': products, 'images': images})
+       
+    sort_option = request.GET.get('sort', 'default')
+
+    if sort_option == 'low_to_high':
+        products = MyProducts.objects.filter(category=category).order_by('variant__price')
+    elif sort_option == 'high_to_low':
+        products = MyProducts.objects.filter(category=category).order_by('-variant__price')
+    else:
+        products = MyProducts.objects.filter(category=category)
+
+    unique_products = {}
+    for product in products:
+        unique_products[product.id] = product
+
+    unique_product_list = list(unique_products.values())
+   
+
+    return render(request, 'users/shop.html', {'products': unique_product_list, 'category':category})
 
 
 @login_required
@@ -203,6 +237,11 @@ def add_address(request):
         return redirect('userprofile')
 
     return render(request, 'users/add_address.html')
+
+def remove_address(request, address_id):
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    address.delete()
+    return redirect('userprofile')
 
 
 @login_required
@@ -280,27 +319,32 @@ def remove_from_wishlist(request, product_id,variant_id):
 
 @login_required
 def add_to_cart(request):
-   print("in add cart")
-   if request.method == 'POST':
-       product_id = request.POST['product_id']
-       color_id = request.POST['color_id']
-       variant_id= request.POST['variant_id']
-       user= request.user
-       try:
-           quantity= request.POST['quantity']
-       except:
-           quantity = 1
-       print(product_id, color_id)
-       product = MyProducts.objects.get(id=product_id)
-       print("Product",product.name)
-       color = get_object_or_404(Color, id=color_id)
-       variant = get_object_or_404(Variant, product_id=product, color=color)
-       c = cartitems.objects.create(user=user, product=product, color=color, variant=variant, quantity=quantity)
+    if request.method == 'POST':
+        product_id = request.POST['product_id']
+        color_id = request.POST['color_id']
+        variant_id = request.POST['variant_id']
+        user = request.user
 
-       return redirect('cartitems_list')
-   else:
-       return redirect('single_product',product_id=product.id)
-   
+        try:
+            quantity = int(request.POST['quantity'])
+        except:
+            quantity = 1
+
+        try:
+            existing_cart_item = cartitems.objects.get(user=user, product_id=product_id, color_id=color_id, variant_id=variant_id)
+
+            existing_cart_item.quantity += quantity
+            existing_cart_item.save()
+        except cartitems.DoesNotExist:
+            product = get_object_or_404(MyProducts, id=product_id)
+            color = get_object_or_404(Color, id=color_id)
+            variant = get_object_or_404(Variant, id=variant_id)
+
+            new_cart_item = cartitems.objects.create(user=user, product=product, color=color, variant=variant, quantity=quantity)
+
+        return redirect('cartitems_list')
+    else:
+        return redirect('single_product', product_id=product.id)
 
 @login_required
 def update_cart_quantity(request, item_id, new_quantity):
@@ -364,6 +408,7 @@ def remove_cartorder_item(request, itemid):
 def cart_order(request):
     user = request.user
     
+    
     try:
          user_wallet = Wallet_user.objects.get(user=user)
     except:
@@ -372,8 +417,19 @@ def cart_order(request):
     address= Address.objects.filter(user=user)
     cart_items = cartitems.objects.filter(user=request.user)
     bag_count= cartitems.objects.filter(user=request.user).count()
+
+    if bag_count == 0:
+        messages.error(request,"No items in the cart !")
+        return redirect('cartitems_list')
+
     first_address = address.first()
     for item in cart_items:
+            print(item.quantity)
+            print(item.variant.quantity)
+            print(item.quantity>item.variant.quantity)
+            if item.quantity>(item.variant.quantity-2):
+                messages.error(request,f"{item.product.name} is Out of stock, decrease the quantity or come later ")
+                return redirect('cartitems_list')
             if item.variant.quantity < 2:
                 messages.error(request, f"Item '{item.product.name}' is out of stock.")
                 return redirect('cartitems_list')
@@ -468,15 +524,51 @@ def initiate_razorpay_payment(request):
     else:
         return JsonResponse({'error': 'Invalid request method.'}, status=400)
     
+def product_check(request, product_id, color_id, variant_id, quantity):
+        user =request.user
+        try:
+            user_wallet = Wallet_user.objects.get(user=user)
+        except:
+            pass
+
+        address= Address.objects.filter(user=user)
+        first_address = address.first()
+        product = MyProducts.objects.get(id=product_id)
+        color = get_object_or_404(Color, id=color_id)
+        images=ProductImages.objects.filter(color_id=color_id)
+        variant = get_object_or_404(Variant, product_id=product, color=color)
+        print(quantity)
+        price = Decimal(variant.price)
+        total_price = price * Decimal(quantity)
+
+        valid_coupons = MyCoupons.objects.filter(
+        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+    )
+
+        
+        context={
+            'product':product,
+            'images':images,
+            'color':color,
+            'variant':variant,
+            'total_price':total_price,
+            'quantity':quantity,
+            'first_address':first_address,
+            'address':address,
+            'user_wallet':user_wallet,
+            'valid_coupons':valid_coupons,
+
+        }
+        return render(request,"users/product_checkout.html",context)
+
 
 def singleproduct_checkout(request):
-        
         if request.method == 'POST':
             product_id = request.POST['product_id']
             color_id = request.POST['color_id']
             variant_id= request.POST['variant_id']
             quantity= request.POST['quantity']
-            print (quantity)
+            print (quantity)    
         user = request.user
 
         try:
@@ -513,6 +605,7 @@ def singleproduct_checkout(request):
 
         }
         return render(request,"users/product_checkout.html",context)
+
         
 
 def product_checkout(request):
@@ -521,6 +614,7 @@ def product_checkout(request):
         address_id = request.POST.get('address_id')
         product_id = request.POST.get('product_id')
         variant_id = request.POST.get('varaint_id')
+        color_id   = request.POST.get('color_id')
         total_price = request.POST.get('total_price')
         total_price = float(total_price)
         quantity = request.POST.get('quantity')
@@ -531,7 +625,7 @@ def product_checkout(request):
             selected_address = Address.objects.get(id=address_id)
         else:
             messages.warning(request,"Add a Address")
-            return redirect('singleproduct_checkout')
+            return redirect('product_check', product_id=product_id, color_id=color_id, variant_id=variant_id, quantity=quantity)
 
 
         quantity=int(quantity)
@@ -628,7 +722,7 @@ def product_checkout(request):
                 )
         else:
                 messages.error(request, "Insufficient funds in your wallet.")
-                return redirect('singleproduct_checkout')
+                return redirect('product_check', product_id=product_id, color_id=color_id, variant_id=variant_id, quantity=quantity)
         
 
     if payment == 'Online' or payment=='Wallet':
@@ -879,3 +973,73 @@ def order_return(request,order_id):
             ) 
 
         return redirect("user_orders") 
+
+
+
+
+
+def generate_invoice_pdf(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    buffer = BytesIO()
+    pdf_title = f'Invoice'
+    pdf = SimpleDocTemplate(buffer, pagesize=letter)
+
+    styles = getSampleStyleSheet()
+    title_style = styles['Title']
+    body_style = styles['BodyText']
+
+    story = []
+    story.append(Paragraph(pdf_title, title_style)) 
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Order Number: {}".format(order.order_id), title_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Order Date: {}".format(order.created_at), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Payment Status: {}".format(order.payment_status), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Payment Method: {}".format(order.payment), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Coupon applied: {}".format(order.coupon_code), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Flat off: {}".format(order.coupon_price), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Total Amount: {} Rs".format(order.total_price), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Shipping Address:", body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Name: {}".format(order.order_address.name), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Phone: {}".format(order.order_address.phone), body_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Address: {}, {}, {}, {} - {}".format(order.order_address.address, order.order_address.locality, order.order_address.city, order.order_address.state, order.order_address.pincode), body_style))
+    story.append(Spacer(1, 12))
+
+
+    # Adding product information in a table
+    data = [['Product Name', 'Quantity', 'Price', 'Total']]
+    for item in order.orderitem_set.all():
+        data.append([Paragraph(item.variant.product_id.name, body_style), item.quantity, item.variant.price * item.quantity, order.total_price])
+
+    table = Table(data, colWidths=[250, 100, 50, 50])  # Adjust the column width for the product name
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 1, colors.black)
+    ]))
+
+    story.append(table)
+
+    pdf.build(story)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'filename=order_invoice_{order_id}.pdf'
+    buffer.seek(0)
+    response.write(buffer.read())
+
+    return response

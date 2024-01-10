@@ -15,7 +15,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
 from django.views.decorators.http import require_POST
-from users.models import Order, OrderStatus,MyCoupons
+from users.models import Order, OrderStatus,MyCoupons,OrderItem
 
 
 from django.apps import apps
@@ -61,6 +61,7 @@ def adminlogin(request):
 def adminlogout(request):
     if not request.user.is_authenticated:
         return redirect('adminlogin')
+
     messages.success(request, 'You have been successfully logged out.')
     logout(request)
     return redirect('adminlogin')
@@ -287,6 +288,33 @@ def add_product(request):
         price = request.POST.get('price')
         is_listed = request.POST.get('is_listed') == 'on'
 
+        if not product_name:
+            messages.error(request, 'Product name is required.')
+            return redirect('add_product')
+
+        if not product_description:
+            messages.error(request, 'Product description is required.')
+            return redirect('add_product')
+
+        if not product_category:
+            messages.error(request, 'Product category is required.')
+            return redirect('add_product')
+
+        if not color_name:
+            messages.error(request, 'Color name is required.')
+            return redirect('add_product')
+
+        if not quantity or not quantity.isdigit():
+            messages.error(request, 'Invalid quantity. Please enter a numeric value.')
+            return redirect('add_product')
+
+
+
+
+        if not price or not price.replace('.', '').isdigit():
+            messages.error(request, 'Invalid price. Please enter a numeric value.')
+            return redirect('add_product')
+
         product = MyProducts(name=product_name, description=product_description, category_id=product_category)
         product.save()
 
@@ -294,6 +322,10 @@ def add_product(request):
 
         variant = Variant(color=color, product_id=product, quantity=quantity, price=price, is_listed=is_listed)
         variant.save()
+        images = [request.FILES.get(f'image{i}') for i in range(1, 5)]
+        if not any(images):
+            messages.error(request, 'At least one image is required.')
+            return redirect('add_product')
 
         for i in range(1, 5):
                 image = request.FILES.get(f'image{i}')
@@ -399,3 +431,13 @@ def generate_unique_coupon_code():
         coupon_code = ''.join(random.choice(characters) for i in range(code_length))
 
     return coupon_code
+
+
+def admin_order_detail(request, oid):
+    order = get_object_or_404(Order, order_id=oid)
+    order_items = OrderItem.objects.filter(order=order)
+    context={
+        'order': order,
+        'order_items': order_items,
+    }
+    return render(request, "myadmin/admin_orderview.html",context)

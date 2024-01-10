@@ -80,8 +80,10 @@
           
         </div>
 
+
         <a href="{% url 'user_orders' %}" class="btn btn-primary btn-back">Back to Home</a>
     </div>
+    <a href="{% url 'generate_invoice_pdf' order_id=order.id %}" class="btn btn-primary">Download Order Invoice</a>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

@@ -41,6 +41,7 @@ html {
   /* Additional styles for the search form */
   .navbar-custom .search-form {
     padding-right: 10px;
+
     /* Adjust the padding as needed */
   }
   
@@ -60,6 +61,10 @@ html {
     font-size: 1.5rem;
     color:#000000;
   }
+
+
+
+  
   
   /* Styles for the carousel section */
   

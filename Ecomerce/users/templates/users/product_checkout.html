@@ -47,9 +47,11 @@
                           <svg height="10" width="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="_1t8m48">
                               <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="#2974f0"></path>
                           </svg>
+                          <a style="float: right;" class="btn btn-primary" href="{% url "userprofile" %}">Add address</a>
                       </div>
                       
                       <div id="selectedAddress" class="_1QFLA6">
+                        
                         <label for="addressSelect">Select Address:</label>
                         <select id="addressSelect" name="selected_address_id" onchange="updateDeliveryAddress()">
                             <option value="" selected disabled>Select an address</option>
@@ -197,6 +199,7 @@
               <input type="hidden" name="selected_coupon_code" id="selectedCouponCode" value="">
               <input type="hidden" name="product_id" id="product_id" value="{{product.id}}">
               <input type="hidden" name="varaint_id" id="variant_id" value="{{variant.id}}">
+              <input type="hidden" name="color_id" id="color_id" value="{{color.id}}">
               <input type="hidden" name="total_price" id="total_price" value="{{total_price}}">
               <input type="hidden" name="quantity" id="quantity" value="{{quantity}}">
               <input type="hidden" name="selected_payment_option" id="selected_payment_option" value="">
@@ -245,6 +248,11 @@ function submitForm() {
 
   document.getElementById('onlinePay').addEventListener('click', function () {
     // Make a fetch request to your server
+    var selectedAddressId = document.getElementById("addressSelect").value;
+    if (!selectedAddressId) {
+      alert("Please select an address before proceeding with the payment.");
+      return;
+    }
     fetch('{% url "razorpay_initiate_payment" %}', {
       method: 'POST',
       headers: {

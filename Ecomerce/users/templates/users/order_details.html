@@ -88,7 +88,10 @@
         {% endif %}
       </div>
     </div>
-  </div>
+    <a href="{% url 'generate_invoice_pdf' order_id=order.id %}" class="btn btn-primary mt-3">Download Order Invoice</a>
+    </div>
+
+
  </div>
 
      <!-- Cancel Order Modal -->
