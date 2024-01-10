@@ -70,19 +70,23 @@
         <!-- Display Wallet History -->
         <div>
           <h4>Wallet History</h4>
-          <ul>
+          <ul class="" style="background-color: #d7dae6;">
             {% for history in wallet_history %}
-              <li>
-                {{ history.date }} -
-                {% if history.transaction_type == 'credit' %}
-                  <span style="color: green;">Credit: +{{ history.amount }}</span>
-                {% elif history.transaction_type == 'debit' %}
-                  <span style="color: red;">Debit: -{{ history.amount }}</span>
-                {% endif %}
+              <li class="list-group-item d-flex justify-content-between align-items-center mt-3">
+                <div>
+                  <span class="fw-bold">{{ history.date|date:"F d, Y" }}</span> -
+                  {% if history.transaction_type == 'credit' %}
+                    <span class="text-success">Credit: +{{ history.amount }} Rs</span>
+                  {% elif history.transaction_type == 'debit' %}
+                    <span class="text-danger">Debit: -{{ history.amount }} Rs</span>
+                  {% endif %}
+                </div>
               </li>
             {% endfor %}
           </ul>
         </div>
+
+
       </div>
     </main>
   </div>

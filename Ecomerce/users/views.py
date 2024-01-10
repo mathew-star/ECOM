@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 import json
 from django.http import Http404
 from django.http import HttpResponse
@@ -860,11 +862,27 @@ def checkout(request):
 
 
 def user_orders(request):
-  cart_items = cartitems.objects.filter(user=request.user)
-  cart_items.delete()
-  user = CustomUser.objects.get(name=request.user.name)
-  orders = Order.objects.filter(user=user)
-  return render(request, 'users/user_orders.html', {'orders': orders})
+    cart_items = cartitems.objects.filter(user=request.user)
+    cart_items.delete()
+    user = CustomUser.objects.get(name=request.user.name)
+    orders_list = Order.objects.filter(user=user)
+
+    orders_per_page = 3  
+
+    paginator = Paginator(orders_list, orders_per_page)
+
+    page = request.GET.get('page')
+
+    try:
+
+        orders = paginator.page(page)
+    except PageNotAnInteger:
+
+        orders = paginator.page(1)
+    except EmptyPage:
+        orders = paginator.page(paginator.num_pages)
+
+    return render(request, 'users/user_orders.html', {'orders': orders})
 
 
 def order_detail(request, oid):
@@ -900,7 +918,7 @@ def order_detail(request, oid):
 
 def wallet(request):
     wallet_user = Wallet_user.objects.get(user=request.user)
-    wallet_history = WalletHistory.objects.filter(user=request.user)
+    wallet_history = WalletHistory.objects.filter(user=request.user).order_by('-date') 
     print(wallet_user.amount)
     w_amount= wallet_user.amount
     context={' wallet_user':wallet_user,'wallet_history':wallet_history,'w_amount':w_amount}

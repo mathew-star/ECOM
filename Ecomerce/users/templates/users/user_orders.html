@@ -4,6 +4,20 @@
 {% block css %}
 <link rel="stylesheet" href="{% static "css/userprofile.css" %} ">
 <style>
+  .order-card {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
   table {
     width: 100%;
     margin-top: 20px;
@@ -81,35 +95,56 @@ th {
     </nav>
 
     <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
-        <div class="cart-items col-lg-8">
-            <h2>Your Orders</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                       <th>Order Id</th>
-                       <th>Order Date</th>
-                       <th>Total price</th>
-                       <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr>
-                                       
-                 <td>{{ order.order_id }} </td>
-                 
-                       <td>
-                        {{ order.created_at|date:"D d M Y" }}
-                       </td>
-                       <td>{{ order.total_price }}</td>
-                       <td><a href="{% url 'order_detail' oid=order.order_id %}">View</a></td>
+      <div class="cart-items col-lg-8">
+          <h2>Your Orders</h2>
 
-                        {% comment %} <td><a href="{% url 'remove_cart_item' itemid=item.id %}"></a>view</td> {% endcomment %}
-                     </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </main>
+          {% for order in orders %}
+          <div class="order-card">
+              <h4>Order ID: {{ order.order_id }}</h4>
+              <p>Order Date: {{ order.created_at|date:"D d M Y" }}</p>
+              <p>Status: {{ order.order_status }}</p>
+              <p>Total Price: {{ order.total_price }}</p>
+              <a href="{% url 'order_detail' oid=order.order_id %}" class="btn btn-primary">View Details</a>
+          </div>
+          {% endfor %}
+
+      
+      </div>
+  </main>
+  <nav aria-label="..." >
+    <ul class="pagination mb-5" >
+        {% if orders.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ orders.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {% for i in orders.paginator.page_range %}
+            <li class="page-item {% if orders.number == i %}active{% endif %}">
+                <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+            </li>
+        {% endfor %}
+
+        {% if orders.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ orders.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ orders.paginator.num_pages }}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
 </div>
 {% endblock %}
