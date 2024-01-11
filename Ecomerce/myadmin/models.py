@@ -49,3 +49,20 @@ class ProductImages(models.Model):
     def __str__(self):
         return f"{self.color.name}"
 
+class ProductOffer(models.Model):
+    product = models.ForeignKey('MyProducts', on_delete=models.CASCADE)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.product.name} - {self.discount_percentage}% Off"
+
+class CategoryOffer(models.Model):
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.category.name} - {self.discount_percentage}% Off"

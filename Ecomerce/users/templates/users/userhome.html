@@ -85,7 +85,7 @@
             <div class="product-card">
 
                 <button class="wishlist-btn" onclick="toggleWishlist(this, {{ product.id }}, {{ first_variant.id }})">
-                    <i class="far fa-heart"></i>
+                    <i id="heartIcon" class="far fa-heart"></i>
                 </button>
                <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
             {% for img in product.productimages_set.all %}
@@ -156,38 +156,63 @@
 {% block script %}
 <script>
     function toggleWishlist(button, productId, variantId) {
-        button.classList.toggle('wishlist-selected');
+    button.classList.toggle('wishlist-selected');
 
-        // Get the CSRF token from the cookie
-        const csrftoken = getCookie('csrftoken');
+    // Get the CSRF token from the cookie
+    const csrftoken = getCookie('csrftoken');
 
-        // Send AJAX request to add/remove from wishlist
-        const url = `/add_to_wishlist/${productId}/${variantId}/`;
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify({})  // You can include data if needed
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Handle the response
-            if (data.status === 'added') {
-                console.log('Added to wishlist');
-            } else if (data.status === 'removed') {
-                console.log('Removed from wishlist');
-            } else if (data.status === 'already_added') {
-                console.log('Already in wishlist');
-            } else if (data.status === 'not_in_wishlist') {
-                console.log('Not in wishlist');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+    // Determine the action based on whether the button is selected or not
+    const action = button.classList.contains('wishlist-selected') ? 'add' : 'remove';
+
+    // Set the URL and method based on the action
+    let url, method;
+    if (action === 'add') {
+        url = `/add_to_wishlist/${productId}/${variantId}/`;
+        method = 'POST';
+    } else {
+        url = `/remove_from_wishlist/${productId}/${variantId}/`;
+        method = 'POST';  // You can use 'DELETE' if your remove_from_wishlist view supports it
     }
+
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({})  
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle the response
+        showAlert(data.status, data.message);
+        if (data.status === 'added') {
+            console.log('Added to wishlist');
+        } else if (data.status === 'removed') {
+            console.log('Removed from wishlist');
+        } else if (data.status === 'already_added') {
+            console.log('Already in wishlist');
+        } else if (data.status === 'not_in_wishlist') {
+            console.log('Not in wishlist');
+        }
+        
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+
+}
+function showAlert(status, message) {
+    Swal.fire({
+        icon: status === 'added' || status === 'removed' ? 'success' : 'info',
+        title: 'Wishlist',
+        text: message,
+        showConfirmButton: false,
+        timer: 1500
+    });
+}
+
 
     // Function to get the CSRF token from the cookie
     function getCookie(name) {
@@ -195,5 +220,6 @@
         const parts = value.split(`; ${name}=`);
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
+    
 </script>
 {% endblock %}

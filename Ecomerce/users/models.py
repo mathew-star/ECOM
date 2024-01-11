@@ -85,7 +85,7 @@ class OrderStatus(models.Model):
     ('Pending', 'Pending'),
     ('Shipped', 'Shipped'),
     ('Delivered', 'Delivered'),
-    ("Caneled",'Canceled'),
+    ("Canceled",'Canceled'),
     ('Returned', 'Returned'),
     ('Paid', 'Paid')
 

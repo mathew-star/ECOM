@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import date
 from django.shortcuts import render, redirect,get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
@@ -10,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from accounts.models import CustomUser
-from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color
+from myadmin.models import BlockedUser,MyProducts,ProductImages,Variant, Color,CategoryOffer,ProductOffer
 from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
@@ -132,8 +133,24 @@ def add_category(request):
     if request.method == 'POST':
         form = CategoryForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            category=form.save()
+
+            new_offer_percentage = request.POST.get('new_offer_percentage')
+            new_offer_start_date = request.POST.get('new_offer_start_date')
+            new_offer_end_date = request.POST.get('new_offer_end_date')
+
+            if new_offer_percentage and new_offer_start_date and new_offer_end_date:
+                CategoryOffer.objects.create(
+                    category=category,
+                    discount_percentage=new_offer_percentage,
+                    start_date=new_offer_start_date,
+                    end_date=new_offer_end_date
+                )
+
+
             return redirect('category_list')
+
+
     else:
         form = CategoryForm()
     return render(request, 'myadmin/add_category.html', {'form': form})
@@ -144,16 +161,54 @@ def add_category(request):
 
 def edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    
+    category_offer = get_object_or_404(CategoryOffer, category=category)
     if request.method == 'POST':
         form = CategoryForm(request.POST, instance=category)
+        discount_percentage = request.POST.get('new_offer_percentage', 0)
+        new_offer_start_date = request.POST.get('new_offer_start_date', date.today())
+        new_offer_end_date = request.POST.get('new_offer_end_date', date.today())
+
+        try:
+            start_date = date.fromisoformat(new_offer_start_date)
+            end_date = date.fromisoformat(new_offer_end_date)
+        except ValueError:
+            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Invalid date format.'})
+
+        print(start_date , end_date)
+        print(end_date < start_date)
+        print(date.today())
+        print(start_date < date.today())
+
+        if end_date < start_date:
+            messages.warning(request,"Error date !")
+            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be after the start date.'})
+
+        if start_date < date.today():
+            messages.warning(request,"Error date !")
+            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Start date should be today or in the future.'})
+
+        if end_date < date.today():
+            messages.warning(request,"Error date !")
+            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be today or in the future.'})
+
         if form.is_valid():
             form.save()
+
+            if discount_percentage:
+                category_offer.discount_percentage = discount_percentage
+            if start_date:
+                category_offer.start_date = start_date
+            if end_date:
+                category_offer.end_date = end_date
+
+            category_offer.save()
+
+
             return redirect('category_list')
     else:
         form = CategoryForm(instance=category)
 
-    return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category})
+    return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer':category_offer })
 
 def delete_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -352,7 +407,7 @@ def admin_orders(request):
 
 def update_order_status(request, orderid):
    if request.method == "POST":
-       print(request.POST)
+
        order_id = request.POST.get('order_id')
        order = get_object_or_404(Order, id=order_id)
        status_id = request.POST.get('status')

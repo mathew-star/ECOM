@@ -6,6 +6,7 @@ urlpatterns = [
     path('product/<int:product_id>/', views.single_product, name='single_product'),
     path('userprofile/', views.userprofile, name='userprofile'),
     path('search/',views.search_product,name="search"),
+    path('search_products/', views.shop_search_products, name='search_products'),
     path('edituser/<int:user_id>/', views.edituser, name='edituser'),
     path('add_address/', views.add_address, name='add_address'),
     path('remove_address/<int:address_id>/',views.remove_address,name="remove_address"),

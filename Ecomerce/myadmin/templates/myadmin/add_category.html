@@ -32,9 +32,23 @@
                 </div>
             {% endif %}
         </div>
- 
         <div class="mb-3">
-            <label for="{{ form.image.id_for_label }}" class="form-label">Image</label>
+            <label for="new_offer_percentage" class="form-label">New Offer Percentage</label>
+            <input type="number" class="form-control" name="new_offer_percentage" id="new_offer_percentage" min="0" max="100" step="1" placeholder="Enter offer percentage" required>
+         </div>
+         
+         <div class="mb-3">
+            <label for="new_offer_start_date" class="form-label">New Offer Start Date</label>
+            <input type="date" class="form-control" name="new_offer_start_date" id="new_offer_start_date" value="{{ date.today }}" placeholder="Select start date" required>
+         </div>
+         
+         <div class="mb-3">
+            <label for="new_offer_end_date" class="form-label">New Offer End Date</label>
+            <input type="date" class="form-control" name="new_offer_end_date" id="new_offer_end_date" value="{{ date.today }}" placeholder="Select end date" required>
+         </div>
+         
+        <div class="mb-3">
+            <label for="{ { form.image.id_for_label }}" class="form-label">Image</label>
             {{ form.image }}
             {% if form.image.errors %}
                 <div class="alert alert-danger">
@@ -49,4 +63,36 @@
     <a href="{% url 'category_list' %}" class="btn btn-secondary mt-3">Back to Category List</a>
  </div>
  
+{% endblock %}
+
+{% block script %}
+<script>
+    function validateDates() {
+        var startDateInput = document.getElementById('new_offer_start_date');
+        var endDateInput = document.getElementById('new_offer_end_date');
+
+        var startDate = new Date(startDateInput.value);
+        var endDate = new Date(endDateInput.value);
+
+        var today = new Date();
+
+        if (startDate < today) {
+            alert('Start date must not be before today.');
+            return false;
+        }
+
+        if (endDate < startDate) {
+            alert('End date must not be before the start date.');
+            return false;
+        }
+
+        return true;
+    }
+
+    document.getElementById('submit_button_id').addEventListener('click', function(event) {
+        if (!validateDates()) {
+            event.preventDefault();  // Prevent form submission if validation fails
+        }
+    });
+</script>
 {% endblock %}

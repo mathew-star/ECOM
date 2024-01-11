@@ -19,7 +19,7 @@
             <tbody>
                 {% for item in wishlist %}
                 <tr>
-                 <td> {{item.product.name}} </td>
+                <td><a href="{% url "single_product" item.product.id %}" style="text-decoration: none; color: #000000;"> {{item.product.name}} </a> </td>
                  
              <td>{{ item.variant.color }} </td>
                  <td><p>{{item.variant.price}}</p> </td>

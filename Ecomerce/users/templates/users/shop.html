@@ -1,16 +1,17 @@
-
 {% extends "users/ubase.html" %}
 {% load static %}
+
 {% block css %}
 <style>
     .filter {
         padding: 20px;
-        margin: 0 ;
+        margin: 0;
         width: 20%;
         display: flex;
-     }
-     .Apply {
-        background-color:grey; 
+    }
+
+    .Apply {
+        background-color: grey;
         border: none;
         color: white;
         padding: 10px 20px;
@@ -20,77 +21,187 @@
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
-     }
-     select {
+    }
+
+    select {
         width: 100%;
         padding: 10px;
         border: none;
         border-radius: 4px;
         background-color: #f1f1f1;
         font-size: 16px;
-     }
-     .Apply:hover {
+    }
+
+    .Apply:hover {
         opacity: 0.8;
         border: 1px solid black;
-     }
-     
-     select:hover {
+    }
+
+    select:hover {
         background-color: lightgray;
-        
-     }
-                    
+    }
+
+    .product-card {
+        margin-bottom: 20px;
+    }
 </style>
 
-<link rel="stylesheet" href="{% static "css/hstyle.css" %} ">
+<link rel="stylesheet" href="{% static "css/hstyle.css" %}">
 {% endblock %}
 
 {% block main %}
 <div class="container mt-5">
     <h2 class="text-center m-3">Our Products</h2>
-    {% if category %}
-    <form class="filter" method="get" action="{% url 'c_shop' category.name %}">
-    {% else %}
-    <form class="filter" method="get" action="{% url 'shop' %}">
-        {% endif %}
-        <select name="sort">
-            <option value="default">Default</option>
-            <option value="low_to_high">Low to High Price</option>
-            <option value="high_to_low">High to Low Price</option>
-        </select>
-        <button class="btn Apply ms-3" type="submit" >Apply</button>
-    </form>
+    <div style="display: flex; justify-content: space-between;">
+        {% if category %}
+        <form class="filter" method="get" action="{% url 'c_shop' category.name %}">
+        {% else %}
+        <form class="filter" method="get" action="{% url 'shop' %}">
+            {% endif %}
+            <select name="sort">
+                <option value="default">Default</option>
+                <option value="low_to_high">Low to High Price</option>
+                <option value="high_to_low">High to Low Price</option>
+            </select>
+            <button class="btn Apply ms-3" type="submit">Apply</button>
+        </form>
 
+        <div class="mb-3">
+            <label for="searchInput" class="form-label">Search:</label>
+            <input type="text" class="form-control" id="searchInput">
+        </div>
+    </div>
 
-    <div class="row mt-4">
-        <!-- Product 1 -->
+    <div class="row mt-4" id="productContainer">
+        <!-- Products will be dynamically added here using JavaScript -->
         {% for product in products %}
         <div class="col-md-4 mb-4">
-         
             <div class="product-card">
-
-             <button class="wishlist-btn" onclick="toggleWishlist(this)"><i class="far fa-heart"></i></button>
-             <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
-                {% for img in product.productimages_set.all %}
-                {% if forloop.first %}
-                  <!-- Display only the first image with a responsive class -->
-                  <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">
-                {% endif %}
-              {% endfor %}</a>
-                
+                <button class="wishlist-btn" onclick="toggleWishlist(this, {{ product.id }}, {{ product.variant_id }})">
+                    <i id="heartIcon" class="far fa-heart"></i>
+                </button>
+                <a href="{% url 'single_product' product_id=product.id %}" class="prod-det" data-product-id="{{ product.id }}">
+                    {% for img in product.productimages_set.all %}
+                    {% if forloop.first %}
+                    <!-- Display only the first image with a responsive class -->
+                    <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img img-fluid">
+                    {% endif %}
+                    {% endfor %}
+                </a>
                 <div class="product-info">
-                    {% comment %} <div class="rating-box">4.1<i class="fas fa-star"></i></div> {% endcomment %}
-                    <h5 class="product-name"> {{product.name}} </h5>
+                    <h5 class="product-name">{{ product.name }}</h5>
                     {% with first_variant=product.variant_set.first %}
                     {% if first_variant %}
-                        <p class="product-price">Price: {{ first_variant.price }}</p>
+                    <p class="product-price">Price: {{ first_variant.price }}</p>
                     {% endif %}
                     {% endwith %}
                 </div>
-              
             </div>
         </div>
         {% endfor %}
-
-   </div>
+    </div>
 </div>
-{% endblock main %}
+{% endblock %}
+
+{% block script %}
+<script>
+    function toggleWishlist(button, productId, variantId) {
+        button.classList.toggle('wishlist-selected');
+        console.log("Hellooo!!");
+        const csrftoken = getCookie('csrftoken');
+
+        const action = button.classList.contains('wishlist-selected') ? 'add' : 'remove';
+
+        let url, method;
+        if (action === 'add') {
+            url = `/add_to_wishlist/${productId}/${variantId}/`;
+            method = 'POST';
+        } else {
+            url = `/remove_from_wishlist/${productId}/${variantId}/`;
+            method = 'POST';
+        }
+
+        fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert(data.status, data.message);
+                if (data.status === 'added') {
+                    console.log('Added to wishlist');
+                } else if (data.status === 'removed') {
+                    console.log('Removed from wishlist');
+                } else if (data.status === 'already_added') {
+                    console.log('Already in wishlist');
+                } else if (data.status === 'not_in_wishlist') {
+                    console.log('Not in wishlist');
+                }
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+    }
+
+    function showAlert(status, message) {
+        Swal.fire({
+            icon: status === 'added' || status === 'removed' ? 'success' : 'info',
+            title: 'Wishlist',
+            text: message,
+            showConfirmButton: false,
+            timer: 1500
+        });
+    }
+    // Function to get the CSRF token from the cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    const productContainer = document.getElementById('productContainer');
+
+    searchInput.addEventListener('input', function () {
+        const searchTerm = searchInput.value;
+        fetch(`/search_products/?search_term=${searchTerm}`)
+            .then(response => response.json())
+            .then(data => updateProductList(data.products))
+            .catch(error => console.error('Error:', error));
+    });
+
+    function updateProductList(products) {
+        productContainer.innerHTML = '';
+        if (products.length > 0) {
+            products.forEach(product => {
+                const productCard = `
+                        <div class="col-md-4 mb-4">
+                            <div class="product-card">
+                                <button class="wishlist-btn" onclick="toggleWishlist(this, ${product.id}, ${product.variant_id})">
+                                    <i id="heartIcon" class="far fa-heart"></i>
+                                </button>
+                                <a href="{% url 'single_product' 0 %}".replace('0', product.id)" class="prod-det">
+                                    <img src="${product.image}" alt="${product.name}" class="product-img img-fluid">
+                                </a>
+                                <div class="product-info">
+                                    <h5 class="product-name">${product.name}</h5>
+                                    <p class="product-price">Price: ${product.price}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                productContainer.innerHTML += productCard;
+            });
+        } else {
+            // Display a message when no products are found
+            productContainer.innerHTML = '<h2 style="height:100vh;">No products found</h2>';
+        }
+    }
+</script>
+{% endblock %}

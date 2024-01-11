@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -79,7 +80,29 @@ def search_product(request):
   return redirect('home')
 
 
+def shop_search_products(request):
+    if request.method == 'GET':
+        search_term = request.GET.get('search_term', '')
+        products = MyProducts.objects.filter(name__icontains=search_term)
+        
+        
+        product_list = []
+        for product in products:
+            # Get the first image for each product (you might want to adjust this logic)
+            image = ProductImages.objects.filter(product=product).first()
+            first_variant = Variant.objects.filter(product_id=product).first()
+            if image:
+                product_data = {
 
+                    'id': product.id,
+                    'name': product.name,
+                    'image': image.image.url,
+                    'price': first_variant.price
+                }
+                product_list.append(product_data)
+
+        return JsonResponse({'products': product_list})
+    
 
 def get_product_details(request,colorid):
 
@@ -138,10 +161,20 @@ def shop(request):
         products = MyProducts.objects.all().order_by('-variant__price').distinct()
     else:
         products = MyProducts.objects.all().distinct()
+    first_variant_prices = {}
+
+    for product in products:
+        first_variant = Variant.objects.filter(product_id=product).first()
+        if first_variant:
+            first_variant_prices[product.id] = first_variant.price
+    context = {
+        'products': products,
+        'first_variant':first_variant,
+    }
     
     
     
-    return render(request,'users/shop.html',{'products':products,'images':images})
+    return render(request,'users/shop.html',context)
 
 
 def c_shop(request, category):
@@ -290,7 +323,6 @@ def add_to_wishlist(request, product_id,variant_id):
     user = request.user
     product = get_object_or_404(MyProducts, id=product_id)
     variant = get_object_or_404(Variant, id=variant_id)
-    # Check if the product is already in the wishlist
     wishlist_item, created = whishlist.objects.get_or_create(user=user, product=product,variant=variant,color=variant.color)
 
     if created:
@@ -298,7 +330,7 @@ def add_to_wishlist(request, product_id,variant_id):
     else:
         status = 'already_added'
 
-    return redirect("wishlist")
+    return JsonResponse({'status': status, 'message': f'Item {status.capitalize()} to wishlist'})
 
 
 @login_required
@@ -307,7 +339,6 @@ def remove_from_wishlist(request, product_id,variant_id):
     user = request.user
     product = get_object_or_404(MyProducts, id=product_id)
     variant= get_object_or_404(Variant, id=variant_id)
-    # Check if the product is in the wishlist
     wishlist_item = whishlist.objects.filter(user=user, product=product,variant=variant).first()
 
 
@@ -317,7 +348,8 @@ def remove_from_wishlist(request, product_id,variant_id):
     else:
         status = 'not_in_wishlist'
 
-    return JsonResponse({'status': status})
+    return JsonResponse({'status': status, 'message': f'Item {status.capitalize()} from wishlist'})
+
 
 @login_required
 def add_to_cart(request):
@@ -945,7 +977,6 @@ def cancel_order(request):
             user_wallet.amount += order.total_price
             user_wallet.save()
 
-            # Log the wallet addition in WalletHistory
             WalletHistory.objects.create(
                 user=request.user,
                 amount=order.total_price,
@@ -969,6 +1000,7 @@ def o_return(request, order_id):
         return render(request, 'users/return.html', context)
     except Order.DoesNotExist:
         raise Http404("Order does not exist")
+   
 def order_return(request,order_id):
     order = get_object_or_404(Order, order_id=order_id)
     if request.method == "POST":
@@ -978,12 +1010,14 @@ def order_return(request,order_id):
         re_turn= Return.objects.create(
             user=request.user,reason=reason,order=order
         )
+        status = get_object_or_404(OrderStatus, status='Returned')
+        order.order_status=status
+        order.save()
 
         user_wallet = Wallet_user.objects.get(user=request.user)
         user_wallet.amount += order.total_price
         user_wallet.save()
 
-            # Log the wallet addition in WalletHistory
         WalletHistory.objects.create(
                 user=request.user,
                 amount=order.total_price,

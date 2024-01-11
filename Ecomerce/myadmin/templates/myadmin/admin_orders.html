@@ -48,6 +48,8 @@
                     <form id="updateOrderStatusForm{{ order.id }}" method="post" action="{% url 'update_order_status' order.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="order_id" value="{{ order.id }}">
+
+                        {% if order.order_status.status != 'Canceled' and order.order_status.status != 'Returned' %}
                         <select class="status-dropdown" name="status">
                             {% for status in order_statuses %}
                                 <option value="{{ status.id }}" {% if order.order_status.id == status.id %}selected{% endif %}>
@@ -55,6 +57,7 @@
                                 </option>
                             {% endfor %}
                         </select>
+                        {% endif %}
                      
                   </td>
                   <td> 

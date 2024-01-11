@@ -1,3 +1,4 @@
+from datetime import date
 from django.shortcuts import render, redirect,get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,7 +9,7 @@ from django.contrib.auth import login as auth_login,authenticate,logout as auth_
 from accounts.form import CustomUserCreationForm
 from accounts.models import CustomUser
 from myadmin.models import BlockedUser
-from myadmin.models import Category,MyProducts,ProductImages, Variant
+from myadmin.models import Category,MyProducts,ProductImages, Variant, CategoryOffer,ProductOffer
 from users.models import cartitems
 from django.core import signing 
 from django.views.decorators.cache import cache_control
@@ -37,11 +38,10 @@ def password_reset_request(request):
         email = request.POST.get('email')
         user = CustomUser.objects.get(email=email)
 
-        # Generate token
+
         token_generator = PasswordResetTokenGeneratorExtended()
         token = token_generator.make_token(user)
 
-        # Create JWT token
         expiration_time = datetime.utcnow() + timedelta(days=1)
         token_payload = {
             'user_id': user.id,
@@ -77,13 +77,16 @@ def password_reset_confirm(request, uidb64, token):
         confirm_password = request.POST.get('confirm_password')
 
         if new_password != confirm_password:
-            messages.success(request,"Password reset sucessfull")
+            messages.success(request,"Password does not  match")
+            return render(request, 'accounts/password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
 
-        # Set the new password
+
         user.set_password(new_password)
         user.save()
 
         messages.success(request, 'Password reset successfully.')
+        return redirect('login')
+    
     return render(request, 'accounts/password_reset_confirm.html', {'uidb64': uidb64, 'token': token})
 
 
@@ -212,27 +215,41 @@ def resend_otp(request, user_id):
     return redirect('verify_otp', user_id=user.id)
 
 
+
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
-    
-    categories= Category.objects.all()
-    products= MyProducts.objects.all()
+
+    categories = Category.objects.all()
+    products = MyProducts.objects.all()
+
+    # Create a dictionary to store category offer information for each category
+    category_offers = {category.id: None for category in categories}
+
+    # Get the active category offers
+    active_category_offers = CategoryOffer.objects.filter(
+        category__in=categories,
+        start_date__lte=date.today(),
+        end_date__gte=date.today()
+    ).select_related('category')
+
+    # Update the category_offers dictionary with active offers
+    for category_offer in active_category_offers:
+        category_offers[category_offer.category.id] = category_offer
 
     first_variant_prices = {}
 
-    # Fetch the first variant price for each product
     for product in products:
         first_variant = Variant.objects.filter(product_id=product).first()
         if first_variant:
             first_variant_prices[product.id] = first_variant.price
+
     context = {
-         'categories':categories,
+        'categories': categories,
         'products': products,
-        'first_variant':first_variant,
+        'first_variant_prices': first_variant_prices,
+        'category_offers': category_offers,
     }
 
-    images= ProductImages.objects.all()
-    return render(request,'users/userhome.html',context)
-
-    
+    images = ProductImages.objects.all()
+    return render(request, 'users/userhome.html', context)
