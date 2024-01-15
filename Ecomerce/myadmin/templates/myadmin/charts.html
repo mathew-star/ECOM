@@ -1,0 +1,42 @@
+<!-- charts.html -->
+{% extends "myadmin/adminbase.html" %}
+
+{% block main %}
+  <div class="center-container">
+    <form action="{% url 'order_chart' %}" method="POST">
+        {% csrf_token %}
+        <label for="chartType">Select Chart Type:</label>
+        <select id="chartType" name="chart">
+          <option value="monthly" {% if chart_type == 'monthly' %}selected{% endif %}>Monthly Chart</option>
+          <option value="yearly" {% if chart_type == 'yearly' %}selected{% endif %}>Yearly Chart</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    <canvas id="OrdersChart"></canvas>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+  <script>
+    var labels = {{ labels|safe }};
+    var data = {{ data|safe }};
+    var chartType = "{{ chart_type|default:'monthly' }}";
+
+    var ctx = document.getElementById('OrdersChart').getContext('2d');
+    var chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartType === 'yearly' ? labels : labels,
+        datasets: [{
+          label: chartType === 'yearly' ? 'Number of Orders' : 'Monthly Orders',
+          data: chartType === 'yearly' ? data : data,
+          backgroundColor: 'rgba(0, 0, 255, 0.5)',
+          borderColor: 'rgba(0, 51, 204, 1)',
+          borderWidth: 2
+        }]
+      },
+      options: {}  // Customize your chart options here
+    });
+  </script>
+{% endblock %}

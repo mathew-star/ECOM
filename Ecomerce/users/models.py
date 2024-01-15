@@ -1,9 +1,13 @@
 from django.db import models
+from django.db.models import Count, Sum, Case, When, IntegerField
 from accounts.models import CustomUser
 from myadmin.models import MyProducts,Variant,Color,ProductImages
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 import random
+from calendar import month_abbr
+from django.db.models import Count, Sum
+
 
 
 
@@ -136,6 +140,70 @@ class Order(models.Model):
         if not self.order_id:
             self.order_id = f"{self.ORDER_ID_PREFIX}{random_code}"
         super().save(*args, **kwargs)
+    
+    # @classmethod
+    # def get_daily_orders_chart_data(cls):
+    #     today = timezone.now().date()
+    #     daily_orders_data = cls.objects.filter(created_at__date=today) \
+    #         .values('created_at__hour') \
+    #         .annotate(
+    #             orders_count=Count('id'),
+    #             cancelled_orders_count=Sum(
+    #                 Case(
+    #                     When(order_status__status='Canceled', then=1),
+    #                     default=0,
+    #                     output_field=IntegerField()
+    #                 )
+    #             )
+    #         )
+
+    #     hourly_data = [{'hour': i, 'orders_count': 0, 'cancelled_orders_count': 0} for i in range(24)]
+
+    #     for entry in daily_orders_data:
+    #         hour = entry['created_at__hour']
+    #         index = next((i for i, item in enumerate(hourly_data) if item["hour"] == hour), None)
+    #         if index is not None:
+    #             hourly_data[index]['orders_count'] = entry['orders_count']
+    #             hourly_data[index]['cancelled_orders_count'] = entry['cancelled_orders_count']
+
+    #     return hourly_data
+        
+    @classmethod
+    def get_daily_orders_chart_data(cls):
+        today = timezone.now().date()
+        daily_orders_data = cls.objects.filter(created_at__date=today) \
+            .values('created_at__day') \
+            .annotate(
+                orders_count=Count('id'),
+                cancelled_orders_count=Sum(
+                    Case(
+                        When(order_status__status='Canceled', then=1),
+                        default=0,
+                        output_field=IntegerField()
+                    )
+                )
+            )
+
+        daily_data = [{'day': i, 'orders_count': 0, 'cancelled_orders_count': 0} for i in range(1, 32)]
+
+        for entry in daily_orders_data:
+            day = entry['created_at__day']
+            index = next((i for i, item in enumerate(daily_data) if item["day"] == day), None)
+            if index is not None:
+                daily_data[index]['orders_count'] = entry['orders_count']
+                daily_data[index]['cancelled_orders_count'] = entry['cancelled_orders_count']
+
+        return daily_data
+
+    @classmethod
+    def get_daily_orders_count_today(cls):
+        today = timezone.now().date()
+        return cls.objects.filter(created_at__date=today).count()
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        db_table = "Order"
+    
 
     class Meta:
         ordering = ['-created_at', '-id']

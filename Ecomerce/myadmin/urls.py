@@ -2,7 +2,11 @@ from django.urls import path
 from . import views
 urlpatterns = [
     path('',views.adminlogin,name='adminlogin'),
-    path('adminhome',views.adminhome,name='adminhome'),
+    path('adminhome/', views.adminhome, name='adminhome'),
+    path('charts/', views.charts, name='charts'),
+    path('order_chart/', views.order_chart, name='order_chart'),
+    path('get_monthly_chart_data/',views.get_monthly_chart_data,name="get_monthly_chart_data"),
+    path('get_yearly_chart_data/',views.get_yearly_chart_data,name="get_yearly_chart_data"),
     path('adminlogout',views.adminlogout,name="adminlogout"),
     path('user_management/', views.user_management_view, name='user_management_view'),
     path('edit_user/<int:user_id>/', views.edit_user_view, name='edit_user'),
@@ -28,5 +32,6 @@ urlpatterns = [
     path('categoryoffer/',views.categoryoffer,name="categoryoffer"),
     path('add_offer/',views.addoffer,name="add_offer"),
     path('add_category_offer/',views.add_category_offer,name="add_category_offer" ),
+    path('adminhome/', views.adminhome, name='adminhome'),
 
 ] 

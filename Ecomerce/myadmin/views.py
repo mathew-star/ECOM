@@ -1,5 +1,8 @@
 import random
 import string
+import json
+from django.db.models import Count
+from calendar import month_abbr
 from decimal import Decimal
 from datetime import date
 from django.shortcuts import render, redirect,get_object_or_404
@@ -18,7 +21,9 @@ from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
 from django.views.decorators.http import require_POST
 from users.models import Order, OrderStatus,MyCoupons,OrderItem
-
+from datetime import datetime
+from datetime import timedelta
+from django.db.models import Sum
 
 from django.apps import apps
 Category = apps.get_model('myadmin', 'Category')
@@ -69,11 +74,7 @@ def adminlogout(request):
     return redirect('adminlogin')
 
 
-def adminhome(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        return render(request, 'myadmin/adminhome.html')
-    return redirect('adminlogin')
-    
+
 
 def user_management_view(request):
     if request.user.is_superuser == False:
@@ -566,4 +567,55 @@ def add_category_offer(request):
 
 
 
-    
+def adminhome(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        orders_count_today = Order.get_daily_orders_count_today()
+        cancelled_orders_count_today = Order.get_daily_orders_chart_data()
+
+        daily_order_data = Order.get_daily_orders_chart_data()
+        context = {
+            "OCT": orders_count_today,
+            "COCT": cancelled_orders_count_today,
+            'daily_order_data': json.dumps(daily_order_data),  # Convert data to JSON format
+        }
+
+        return render(request, 'myadmin/adminhome.html', context)
+    return redirect('adminlogin')
+
+
+
+
+def charts(request):
+    now = datetime.now()
+    orders = Order.objects.filter(created_at__year=now.year).values('created_at__month').annotate(count=Count('id'))
+    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    data = [orders.filter(created_at__month=i).aggregate(count=Count('id'))['count'] if orders.filter(created_at__month=i).exists() else 0 for i in range(1, 13)]
+
+    return render(request, "myadmin/charts.html", {'labels': labels, 'data': data})
+
+
+
+def order_chart(request):
+    if request.method == 'POST':
+        chart_type = request.POST.get('chart')
+        if chart_type == 'monthly':
+            return get_monthly_chart_data(request)
+        elif chart_type == 'yearly':
+            return get_yearly_chart_data(request)
+    return render(request, "myadmin/charts.html")
+
+def get_monthly_chart_data(request):
+    now = datetime.now()
+    orders = Order.objects.filter(created_at__year=now.year).values('created_at__month').annotate(count=Count('id'))
+    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    data = [orders.filter(created_at__month=i).aggregate(count=Count('id'))['count'] if orders.filter(created_at__month=i).exists() else 0 for i in range(1, 13)]
+
+    return render(request, "myadmin/charts.html", {'labels': labels, 'data': data, 'chart_type': 'monthly'})
+
+def get_yearly_chart_data(request):
+    now = datetime.now()
+    orders = Order.objects.filter(created_at__year=now.year).values('created_at__year').annotate(count=Count('id'))
+    labels = [str(year['created_at__year']) for year in orders]
+    data = [year['count'] for year in orders]
+
+    return render(request, "myadmin/charts.html", {'labels': labels, 'data': data, 'chart_type': 'yearly'})

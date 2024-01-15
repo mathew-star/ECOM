@@ -1,43 +1,77 @@
-
 {% extends "myadmin/adminbase.html" %}
 
 {% block css %} 
-
 {% endblock %}
 
-
 {% block main %}
-
-
   <div class="container-fluid">
     <div class="row justify-content-center">
-
       <!-- Content area -->
       <div class="col-sm-9 col-md-10 pt-3">
         <div class="jumbotron text-center admin-box" style="background-color: #aeacb9;">
-          <h1 class="display-4 admin-card">Welcome <span th:text="${username}"
-              style="font-weight: bold; color: white;"></span></h1>
-
+          <h1 class="display-4 admin-card">Welcome <span th:text="${username}" style="font-weight: bold; color: white;"></span></h1>
           <p class="admin-card">Easily manage your profile </p>
         </div>
-        <label for="chartType"></label><select id="chartType">
-          <option value="daily">Daily Chart</option>
-          <option value="monthly">Monthly Chart</option>
-          <option value="yearly">Yearly Chart</option>
-        </select>
 
         <div class="center-container">
-          <canvas id="myChart" style="display: flex;
-                 justify-content: center ; align-items: center; "> </canvas>
+          <h4>Daily Chart</h4>
+          <canvas id="dailyOrdersChart" style="display: flex; justify-content: center; align-items: center;"> </canvas>
         </div>
-
       </div>
     </div>
   </div>
+{% endblock %}
+{% block script %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      loadDailyChart();
+    });
 
-  {% endblock %}
+    function loadDailyChart() {
+      var dailyData = {{ daily_order_data|safe }};
+      console.log(dailyData)
+      var dailyLabels = dailyData.map(function (item) {
+        return item.day;
+      });
 
+      var dailyOrdersCount = dailyData.map(function (item) {
+        return item.orders_count;
+      });
 
-  {% block script %}
+      var dailyCancelledOrdersCount = dailyData.map(function (item) {
+        return item.cancelled_orders_count;
+      });
 
-  {% endblock %}
+      var dailyCtx = document.getElementById('dailyOrdersChart').getContext('2d');
+
+      var dailyChart = new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+          labels: dailyLabels,
+          datasets: [{
+            label: 'Order Count',
+            data: dailyOrdersCount,
+            backgroundColor: 'rgba(0, 0, 179, 0.5)',
+            borderColor: 'rgba(0, 153, 255, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Cancelled Order Count',
+            data: dailyCancelledOrdersCount,
+            backgroundColor: 'rgba(255, 51, 0, 0.2)',
+            borderColor: 'rgba(255, 51, 0, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  </script>
+{% endblock %}
