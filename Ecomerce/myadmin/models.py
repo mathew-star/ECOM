@@ -1,4 +1,4 @@
-
+from decimal import Decimal
 from django.db import models
 from accounts.models import CustomUser
 from colorfield.fields import ColorField
@@ -30,6 +30,7 @@ class MyProducts(models.Model):
     category= models.ForeignKey(Category, on_delete=models.CASCADE)
     is_listed = models.BooleanField(default=True)
 
+
     def __str__(self):
         return self.name
 
@@ -38,8 +39,16 @@ class Variant(models.Model):
     product_id = models.ForeignKey(MyProducts, on_delete=models.CASCADE, default=None)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price=  models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount= models.DecimalField(max_digits=5, decimal_places=2, default=0)
     is_listed = models.BooleanField(default=True)
 
+    def get_discount(self):
+        if self.discount != 0:
+            return self.price - (self.price * Decimal((self.discount / 100)))
+        else:
+            return self.price
+    
 
 class ProductImages(models.Model):
     image = models.ImageField(upload_to='product_images/')
@@ -52,17 +61,13 @@ class ProductImages(models.Model):
 class ProductOffer(models.Model):
     product = models.ForeignKey('MyProducts', on_delete=models.CASCADE)
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    start_date = models.DateField()
-    end_date = models.DateField()
 
     def __str__(self):
         return f"{self.product.name} - {self.discount_percentage}% Off"
 
 class CategoryOffer(models.Model):
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.category.name} - {self.discount_percentage}% Off"

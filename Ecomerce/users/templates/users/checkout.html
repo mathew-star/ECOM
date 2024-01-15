@@ -109,7 +109,7 @@
                                               <!-- Product Details -->
                                               <h5 class="">{{ item.product.name }}</h5>
                                               <p class="">{{ item.color.name }}</p>
-                                              <p class="">{{ item.variant.price }} x {{ item.quantity }}</p>
+                                              <div style="display: flex;"><p class="me-4">{{ item.variant.price }} x {{ item.quantity }}</p>{% if item.variant.discount != 0 %} <span class="text-danger"> -{{item.variant.discount}}%  </span> {% endif %}</div>
                                               <div class="d-flex justify-content-between align-items-center">
                                                   <!-- Quantity Controls -->
                                                   {% comment %} <a href="{% url 'remove_cartorder_item' itemid=item.id %}" class="btn btn-danger ms-4">Remove</a> {% endcomment %}
@@ -178,12 +178,18 @@
               <li
                 class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
                 Products
-                <span>{{ total_price }}</span>
+                <span>{{ sub_total }}</span>
+              </li>
+              <li
+                class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
+                Discount
+                <span>{{ discount }}</span>
               </li>
               <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                 Shipping
-                <span>Gratis</span>
+                <span>Free</span>
               </li>
+              
               <li
                 class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-3">
                 <div>
@@ -314,14 +320,13 @@ function submitForm() {
       var displayedAddress = document.getElementById("displayedAddress");
       var addressIdInput = document.getElementById("address_id");  // Added this line
 
-      // Get the selected address ID
       var selectedAddressId = addressSelect.value;
 
-      // Fetch the address details from the server
+
       fetch(`/get_address_details/${selectedAddressId}`)
           .then(response => response.json())
           .then(data => {
-              // Display the fetched address details
+
               displayedAddress.innerHTML = `
                   <span>
                       ${data.name}

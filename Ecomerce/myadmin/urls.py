@@ -23,6 +23,10 @@ urlpatterns = [
     path('coupon_list/',views.coupon_list,name="coupon_list"),
     path('generate_coupon_code/',views.generate_coupon_code,name="generate_coupon_code"),
     path('add_new_coupon/',views.add_new_coupon,name="add_new_coupon"),
-    path('order_view/<str:oid>/',views.admin_order_detail, name="order_view")
+    path('order_view/<str:oid>/',views.admin_order_detail, name="order_view"),
+    path('productoffer/',views.productoffer,name="productoffer"),
+    path('categoryoffer/',views.categoryoffer,name="categoryoffer"),
+    path('add_offer/',views.addoffer,name="add_offer"),
+    path('add_category_offer/',views.add_category_offer,name="add_category_offer" ),
 
 ] 

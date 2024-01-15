@@ -116,11 +116,11 @@ otpBoxes[0].addEventListener('paste', (e) => {
   }
 })
 
-// Handle OTP input
+
 otpBoxes.forEach((box, index) => {
   box.addEventListener('keyup', (event) => {
       if (event.keyCode >= 48 && event.keyCode <= 57) {
-          // Move to the next input field if it exists
+       
           if (otpBoxes[index + 1]) {
               otpBoxes[index + 1].focus();
           } else {

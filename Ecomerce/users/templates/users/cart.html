@@ -135,7 +135,9 @@
                     <td><img src="{{ product_image.image.url }}" alt="Product Image" style="width: 50px;"></td>
                 {% endwith %}                      
                 <td>{{ item.product.name }} 
-                    <p>{{item.color.name}}</p>
+                    <div style="display: flex;">
+                    <p class="me-3">{{item.color.name}}</p>{% if item.variant.discount != 0 %}  <span class="text-danger"> -{{item.variant.discount}}% </span> {% endif %}
+                    </div>  
                 </td>
                       <td>
                         <div class="quantity">
@@ -162,8 +164,11 @@
     
        <div class="order-summary col-lg-4">
            <h2>Order Summary</h2>
-           <p id="subtotal">Subtotal: {{ total_price }}Rs</p>
+           <p id="subtotal">Subtotal: {{ sub_total }}Rs</p>
+           <p id="discount">Discount: {{ discount }}Rs</p>
+           <p id="shipping" >Shipping : FREE</p>
            <p id="total-price">Total: {{ total_price }} Rs</p>
+           
            <a href="{% url 'cart_order' %}" class="btn btn-success mt-3">Proceed to Checkout</a>       </div>
     </div>
     
@@ -206,7 +211,9 @@
                             document.getElementById(`qty-plus-${itemId}`).disabled = false;
                         }
                         document.getElementById('total-price').innerText = `Total: ${data.total_price} Rs`;
-                        document.getElementById('subtotal').innerText = `Sub Total: ${data.total_price} Rs`;
+                        document.getElementById('subtotal').innerText = `Sub Total: ${data.sub_total} Rs`;
+                        document.getElementById('discount').innerText = `Discount: ${data.discount} Rs`;
+
                     } else {
                         console.error('Failed to update quantity.');
                     }

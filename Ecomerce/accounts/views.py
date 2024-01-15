@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from django.shortcuts import render, redirect,get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -9,8 +10,8 @@ from django.contrib.auth import login as auth_login,authenticate,logout as auth_
 from accounts.form import CustomUserCreationForm
 from accounts.models import CustomUser
 from myadmin.models import BlockedUser
-from myadmin.models import Category,MyProducts,ProductImages, Variant, CategoryOffer,ProductOffer
-from users.models import cartitems
+from myadmin.models import Category,MyProducts,ProductImages, Variant
+from users.models import cartitems,Referral,Wallet_user,WalletHistory
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -115,15 +116,35 @@ def signup(request):
         return redirect('home')
     
     if request.method == 'POST':
+        referral_code = request.POST.get('referral_code')
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False  # Deactivate user until OTP verification
             user.save()
 
-            # Invalidate any existing OTP for the user
             user.otp = None
             user.save()
+
+            if referral_code:
+                try:
+                    referral = Referral.objects.get(code=referral_code)
+                    referred_by_user = referral.user
+
+                    user_wallet = Wallet_user.objects.get_or_create(user=user)[0]
+                    user_wallet.amount += 50
+                    user_wallet.save()
+
+                    referred_by_wallet = Wallet_user.objects.get_or_create(user=referred_by_user)[0]
+                    referred_by_wallet.amount += 100
+                    referred_by_wallet.save()
+
+                    WalletHistory.objects.create(user=user, amount=50, transaction_type='credit')
+                    WalletHistory.objects.create(user=referred_by_user, amount=100, transaction_type='credit')
+
+                except Referral.DoesNotExist:
+                    messages.error(request,"Invalid Referal Code !")
+                    
 
             send_otp_email(user)
 
@@ -216,26 +237,51 @@ def resend_otp(request, user_id):
 
 
 
+# def home(request):
+#     if request.user.is_authenticated == False and request.user.is_active == False:
+#         return redirect('signup')
+
+#     categories = Category.objects.all()
+#     products = MyProducts.objects.all()
+#     cat_offer = CategoryOffer.objects.all()
+
+#     category_offers = {category.id: None for category in categories}
+#     print(category_offers)
+#     for i in cat_offer:
+#         if i.end_date > date.today():
+#             category_offers[i.category.id] = i.discount_percentage
+
+
+#     first_variant_prices = {}
+
+#     for product in products:
+#         first_variant = Variant.objects.filter(product_id=product).first()
+#         if first_variant:
+#             first_variant_prices[product.id] = first_variant.price
+
+
+                    
+
+#     context = {
+#         'categories': categories,
+#         'products': products,
+#         'first_variant_prices': first_variant_prices,
+#         'category_offers': category_offers,
+#     }
+
+#     images = ProductImages.objects.all()
+#     return render(request, 'users/userhome.html', context)
+
+
+
 def home(request):
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
+    cart_items = cartitems.objects.filter(user=request.user)
+    bag_count= cartitems.objects.filter(user=request.user).count()
 
-    categories = Category.objects.all()
-    products = MyProducts.objects.all()
-
-    # Create a dictionary to store category offer information for each category
-    category_offers = {category.id: None for category in categories}
-
-    # Get the active category offers
-    active_category_offers = CategoryOffer.objects.filter(
-        category__in=categories,
-        start_date__lte=date.today(),
-        end_date__gte=date.today()
-    ).select_related('category')
-
-    # Update the category_offers dictionary with active offers
-    for category_offer in active_category_offers:
-        category_offers[category_offer.category.id] = category_offer
+    categories= Category.objects.all()
+    products= MyProducts.objects.all()
 
     first_variant_prices = {}
 
@@ -245,11 +291,11 @@ def home(request):
             first_variant_prices[product.id] = first_variant.price
 
     context = {
-        'categories': categories,
+         'categories':categories,
         'products': products,
-        'first_variant_prices': first_variant_prices,
-        'category_offers': category_offers,
+        'bag_count':bag_count,
+        'first_variant':first_variant,
     }
 
-    images = ProductImages.objects.all()
-    return render(request, 'users/userhome.html', context)
+    images= ProductImages.objects.all()
+    return render(request,'users/userhome.html',context)

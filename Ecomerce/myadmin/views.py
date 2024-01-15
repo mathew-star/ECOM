@@ -1,5 +1,6 @@
 import random
 import string
+from decimal import Decimal
 from datetime import date
 from django.shortcuts import render, redirect,get_object_or_404
 from django.utils import timezone
@@ -496,3 +497,73 @@ def admin_order_detail(request, oid):
         'order_items': order_items,
     }
     return render(request, "myadmin/admin_orderview.html",context)
+
+
+def productoffer(request):
+    products = MyProducts.objects.all()
+    variants= Variant.objects.all()
+    return render(request , "myadmin/productoffer.html",{'products':products,'variants':variants})
+def categoryoffer(request):
+    cat = CategoryOffer.objects.all()
+    category = Category.objects.all()
+    variants= Variant.objects.all()
+    return render(request , "myadmin/categoryoffer.html",{'category':cat, 'variants':variants})
+
+def addoffer(request):
+    if request.method == "POST":
+        variant_id = request.POST.get('variant_id')
+        discount = request.POST.get('discount')
+        variant = get_object_or_404(Variant, id=variant_id)
+    
+        try:
+            discount_percentage = float(discount)
+            if 0 <= discount_percentage <= 100:
+                variant.discount = discount_percentage
+                variant.discount_price = variant.get_discount()
+                variant.save()
+                messages.success(request, "Offer added successfully")
+                return redirect('productoffer')
+            else:
+                messages.error(request, "Invalid Discount Percentage")
+                return render(request, 'myadmin/productoffer.html')
+        except ValueError:
+            messages.error(request, "Invalid discount percentage")
+            return render(request, 'myadmin/productoffer.html', {'error_message': 'Invalid discount percentage'})
+    else:
+        messages.error(request, "Invalid request method")
+        return render(request, 'myadmin/productoffer.html', {'error_message': 'Invalid request method'})
+    
+
+
+def add_category_offer(request):
+    if request.method == "POST":
+        category_id = request.POST.get('category_id')
+        print(category_id)
+        discount = request.POST.get('discount')  
+        category = Category.objects.get(id=category_id)
+        variants = Variant.objects.filter(product_id__category=category)
+        categoryoffer=CategoryOffer.objects.get(category=category)
+
+        try:
+            discount = Decimal(discount)
+            if 0 <= discount <= 100:
+                for variant in variants:
+                    variant.discount = discount
+                    variant.discount_price = variant.get_discount()
+                    variant.save()
+
+                categoryoffer.discount_percentage = discount
+                categoryoffer.save()
+                messages.success(request, "Offer added successfully")
+                return redirect('productoffer')
+            
+            else:
+                messages.error(request, "Invalid Discount Percentage")
+                return render(request, 'myadmin/productoffer.html')
+        except ValueError:
+            messages.error(request, "Invalid Discount Percentage")
+            return render(request, 'myadmin/productoffer.html')
+
+
+
+    

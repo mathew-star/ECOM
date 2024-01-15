@@ -7,6 +7,12 @@
 {% endblock %}
 
 {% block main %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
 <div class="wrapper">
     <div class="container main">
         <div class="row">
@@ -57,6 +63,10 @@
                             {% if form.password2.errors %}
                                 <div class="error-message">{{ form.password2.errors.0 }}</div>
                             {% endif %}
+                        </div>
+
+                        <div class="input-field">
+                            <input class="input" type="text" name="referral_code" placeholder="Referral Code">
                         </div>
 
                         <div class="input-field">

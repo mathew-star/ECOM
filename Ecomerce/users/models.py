@@ -30,7 +30,10 @@ class cartitems(models.Model):
     @property
     def total_price(self):
         if self.variant is not None:
-            return self.variant.price * self.quantity
+            if self.variant.discount ==0:
+                return self.variant.price * self.quantity
+            else:
+                return self.variant.discount_price * self.quantity
         else:
             return 0
     @property
@@ -118,6 +121,7 @@ class Order(models.Model):
     coupon_price = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     order_address =models.ForeignKey(OrderAddress,on_delete=models.CASCADE,related_name='orderaddress',null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount= models.DecimalField(max_digits=5, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     order_status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
@@ -171,3 +175,10 @@ class Return(models.Model):
     def __str__(self):
         return f"Return #{self.id} - Order #{self.order.id}"
     
+
+class Referral(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    code = models.CharField(max_length=12, blank=True)
+    referred_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, blank=True, null=True, related_name='ref_by')
+    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)

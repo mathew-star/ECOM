@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
+from datetime import date
+from django.utils import timezone
 from django.urls import reverse
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 import json
 from django.http import Http404
 from django.http import HttpResponse
@@ -14,8 +15,8 @@ from django.shortcuts import render, get_object_or_404
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from myadmin.models import BlockedUser
-from myadmin.models import Category,ProductImages,MyProducts, Variant, Color
-from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return,MyCoupons,UserAppliedCoupon
+from myadmin.models import Category,ProductImages,MyProducts, Variant, Color,CategoryOffer,ProductOffer
+from users.models import Address,cartitems,Order, OrderItem,OrderStatus,whishlist,OrderAddress,Wallet_user, WalletHistory,Return,MyCoupons,UserAppliedCoupon,Referral
 from accounts.models import CustomUser
 from django.contrib import messages
 from django.core import signing 
@@ -23,13 +24,30 @@ from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 import razorpay
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from io import BytesIO
+
+
+
+def apply_category_offer(product, category_offers):
+    if product.category.id in category_offers:
+        offer_percentage = category_offers[product.category.id]
+        if offer_percentage is not None:
+            first_variant = product.variant_set.first()
+            if first_variant:
+                original_price = first_variant.price
+                discounted_price = original_price - (original_price * (Decimal(offer_percentage) / 100))
+                return {
+                    'original_price': original_price,
+                    'discounted_price': discounted_price,
+                    'discount_percentage': offer_percentage
+                }
+    return None
 
 
 
@@ -45,13 +63,30 @@ def single_product(request,product_id):
     product = get_object_or_404(MyProducts, pk=product_id)
     variant = Variant.objects.filter(product_id=product_id)[0]
     images= ProductImages.objects.filter(color_id = variant.color.id)
-    context={
-        'product':product,
-        'variant':variant,
-        'images':images
-    }
+    try:
+        category_offer = CategoryOffer.objects.filter(category=product.category, end_date__gte=timezone.now().date()).first()
+        Productofferprice = variant.price - (variant.price * (category_offer.discount_percentage / 100))
+    except:
+        Productofferprice=None
+        category_offer=None
+
+    if Productofferprice:
+        context={
+            'product':product,
+            'variant':variant,
+            'images':images,
+            'category_offer':category_offer,
+            'Productofferprice':Productofferprice,
+        }
+    else:
+        context={
+            'product':product,
+            'variant':variant,
+            'images':images,
+        }
 
     return render(request, 'users/singleproduct.html', context)
+
 
 
 # def get_product_images(request):
@@ -104,21 +139,23 @@ def shop_search_products(request):
         return JsonResponse({'products': product_list})
     
 
-def get_product_details(request,colorid):
 
+def get_product_details(request,colorid):
     try:
         variant = Variant.objects.get(color_id=colorid)
         images= ProductImages.objects.filter(color_id=variant.color.id)
         images = [{'image': img.image.url} for img in images]
-
         data = {
             'variant': {
                 'price': variant.price,
+                'variant_id':variant.id,
+                'color_id':colorid,
+                'discount':variant.discount,
+                'discount_price':variant.discount_price,
                 'quantity': variant.quantity,
             },
             'images': images,
         }
-
         return JsonResponse(data)
     
     except Variant.DoesNotExist:
@@ -127,6 +164,8 @@ def get_product_details(request,colorid):
         return JsonResponse({'error': 'Product images not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)  
+
+
 
 def get_stock_status(request):
     color_id = request.GET.get('colorid')
@@ -150,10 +189,12 @@ def get_stock_status(request):
 def shop(request):
     if request.user.is_authenticated == False:
         return redirect('signup')
-    
+
+    products= MyProducts.objects.all()
+    images= ProductImages.objects.all()
     sort_option = request.GET.get('sort', 'default')
 
-    images = ProductImages.objects.all()  # Move this line outside of the else block
+    images = ProductImages.objects.all()  
 
     if sort_option == 'low_to_high':
         products = MyProducts.objects.all().order_by('variant__price').distinct()
@@ -161,29 +202,29 @@ def shop(request):
         products = MyProducts.objects.all().order_by('-variant__price').distinct()
     else:
         products = MyProducts.objects.all().distinct()
+
     first_variant_prices = {}
 
     for product in products:
         first_variant = Variant.objects.filter(product_id=product).first()
         if first_variant:
             first_variant_prices[product.id] = first_variant.price
-    context = {
-        'products': products,
-        'first_variant':first_variant,
-    }
-    
-    
-    
-    return render(request,'users/shop.html',context)
+    unique_products = {}
+    for product in products:
+        unique_products[product.id] = product
+
+    unique_product_list = list(unique_products.values())
+
+
+    return render(request,'users/shop.html',{'products':unique_product_list,'images':images,'first_variant':first_variant})
+
+
 
 
 def c_shop(request, category):
     if request.user.is_authenticated == False:
-       return redirect('signup')
-
-    category = get_object_or_404(Category, name=category)
-
-       
+        return redirect('signup')
+    category= Category.objects.get(name=category)
     sort_option = request.GET.get('sort', 'default')
 
     if sort_option == 'low_to_high':
@@ -198,18 +239,50 @@ def c_shop(request, category):
         unique_products[product.id] = product
 
     unique_product_list = list(unique_products.values())
-   
+        
+    category = get_object_or_404(Category, name=category)
+    products = MyProducts.objects.filter(category=category)
+    images = ProductImages.objects.filter(product__in=products)
+    category = get_object_or_404(Category, name=category)
+
 
     return render(request, 'users/shop.html', {'products': unique_product_list, 'category':category})
+
+
+# def c_shop(request, category):
+#     if request.user.is_authenticated == False:
+#        return redirect('signup')
+
+#     category = get_object_or_404(Category, name=category)
+    
+       
+#     sort_option = request.GET.get('sort', 'default')
+
+#     if sort_option == 'low_to_high':
+#         products = MyProducts.objects.filter(category=category).order_by('variant__price')
+#     elif sort_option == 'high_to_low':
+#         products = MyProducts.objects.filter(category=category).order_by('-variant__price')
+#     else:
+#         products = MyProducts.objects.filter(category=category)
+
+#     unique_products = {}
+#     for product in products:
+#         unique_products[product.id] = product
+
+#     unique_product_list = list(unique_products.values())
+   
+
+#     return render(request, 'users/shop.html', {'products': unique_product_list, 'category':category})
 
 
 @login_required
 def userprofile(request):
     user = request.user
+    referal_code=Referral.objects.get(user=user)
     address= Address.objects.filter(user=user)
     for i in address:
         print(i.name)
-    context = {'user': user, 'address':address}
+    context = {'user': user, 'address':address,'referal':referal_code}
     return render(request, 'users/userprofile.html', context)
 
 def edituser(request, user_id):
@@ -373,6 +446,10 @@ def add_to_cart(request):
             product = get_object_or_404(MyProducts, id=product_id)
             color = get_object_or_404(Color, id=color_id)
             variant = get_object_or_404(Variant, id=variant_id)
+            if quantity > variant.quantity:
+                messages.error(request,"The item out of stock !")
+                return redirect('single_prodct',product_id)
+            
 
             new_cart_item = cartitems.objects.create(user=user, product=product, color=color, variant=variant, quantity=quantity)
 
@@ -386,6 +463,7 @@ def update_cart_quantity(request, item_id, new_quantity):
         cart_item = cartitems.objects.get(id=item_id, user=request.user)
         cart_item.quantity = new_quantity
         cart_item.save()
+        print(cart_item.quantity)
         color_id= cart_item.color.id
         variant = Variant.objects.get(color_id=color_id)
         stock= variant.quantity - 2
@@ -395,11 +473,17 @@ def update_cart_quantity(request, item_id, new_quantity):
             out_of_stock = True
             
         total_price = sum([item.total_price for item in cartitems.objects.filter(user=request.user)])
+        sub_total = sum([item.variant.price*item.quantity for item in cartitems.objects.filter(user=request.user)])
+        discount = round(sum ((item.variant.price*item.quantity)*Decimal(item.variant.discount/100) for item in cartitems.objects.filter(user=request.user)),2)
+
+        print(sub_total)
         bag_count = cartitems.objects.filter(user=request.user).count()
 
         response_data = {
             'success': True,
             'total_price': total_price,
+            'sub_total': sub_total,
+            'discount': discount,
             'bag_count': bag_count,
             'out_of_stock':out_of_stock
         }
@@ -416,10 +500,14 @@ def cartitems_list(request):
    bag_count= cartitems.objects.filter(user=request.user).count()
 
    total_price = sum([item.total_price for item in cart_items])
+   sub_total = sum (item.variant.price*item.quantity for item in cart_items)
+   discount = round(sum (item.variant.price*Decimal(item.variant.discount/100) for item in cart_items),2)
+
+   
    print(total_price)
    context={
        'cart_items': cart_items, 'total_price': total_price,
-       'bag_count':bag_count
+       'bag_count':bag_count,'sub_total':sub_total, 'discount':discount,
        
    }
    return render(request, "users/cart.html", context)
@@ -470,13 +558,19 @@ def cart_order(request):
     
 
     total_price = sum([item.total_price for item in cart_items])
+    print(total_price)
     valid_coupons = MyCoupons.objects.filter(
         Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
     )
+    sub_total = sum (item.variant.price*item.quantity for item in cart_items)
+    discount = round(sum (item.variant.price*Decimal(item.variant.discount/100) for item in cart_items),2)
+
 
     context={
         'cart_items' : cart_items,
         'total_price':total_price,
+        'sub_total':sub_total,
+        'discount':discount,
         'address':address,
         'first_address':first_address,
         'user_wallet':user_wallet,
@@ -572,8 +666,15 @@ def product_check(request, product_id, color_id, variant_id, quantity):
         images=ProductImages.objects.filter(color_id=color_id)
         variant = get_object_or_404(Variant, product_id=product, color=color)
         print(quantity)
-        price = Decimal(variant.price)
-        total_price = price * Decimal(quantity)
+
+        if variant.discount == 0:
+            price = Decimal(variant.price)
+            total_price = price * Decimal(quantity)
+            discount=0
+        else:
+            price = Decimal(variant.discount_price)
+            total_price = price * Decimal(quantity)
+            discount= round(variant.price * Decimal(variant.discount/100),2)
 
         valid_coupons = MyCoupons.objects.filter(
         Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
@@ -585,6 +686,7 @@ def product_check(request, product_id, color_id, variant_id, quantity):
             'images':images,
             'color':color,
             'variant':variant,
+            'discount':discount,
             'total_price':total_price,
             'quantity':quantity,
             'first_address':first_address,
@@ -602,8 +704,15 @@ def singleproduct_checkout(request):
             color_id = request.POST['color_id']
             variant_id= request.POST['variant_id']
             quantity= request.POST['quantity']
-            print (quantity)    
+            try:
+                offerprice= request.POST['offer_price']
+                offerpercentage= request.POST['offer_percentage']
+            except:
+                pass
+            print (quantity)   
+         
         user = request.user
+        
 
         try:
          user_wallet = Wallet_user.objects.get(user=user)
@@ -616,9 +725,23 @@ def singleproduct_checkout(request):
         color = get_object_or_404(Color, id=color_id)
         images=ProductImages.objects.filter(color_id=color_id)
         variant = get_object_or_404(Variant, product_id=product, color=color)
-        print(quantity)
-        price = Decimal(variant.price)
-        total_price = price * Decimal(quantity)
+
+        try:
+            category_offer= CategoryOffer.objects.get(category=product.category)
+        except:
+            pass
+        
+        if int(quantity) > variant.quantity:
+            messages.error(request,'This item is out of stock, decrease the quantity !')
+            return redirect('single_product',product_id=product_id)
+        if variant.discount == 0:
+            price = Decimal(variant.price)
+            total_price = price * Decimal(quantity)
+            discount=0
+        else:
+            price = Decimal(variant.discount_price)
+            total_price = price * Decimal(quantity)
+            discount= round(variant.price * Decimal(variant.discount/100),2)
 
         valid_coupons = MyCoupons.objects.filter(
         Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
@@ -629,6 +752,7 @@ def singleproduct_checkout(request):
             'product':product,
             'images':images,
             'color':color,
+            'discount':discount,
             'variant':variant,
             'total_price':total_price,
             'quantity':quantity,
@@ -654,6 +778,10 @@ def product_checkout(request):
         quantity = request.POST.get('quantity')
         payment= request.POST.get('selected_payment_option')
         coupon_code=request.POST.get('selected_coupon_code')
+        
+
+        
+
         
         if address_id:
             selected_address = Address.objects.get(id=address_id)
@@ -681,6 +809,12 @@ def product_checkout(request):
     selected_address = Address.objects.get(id=address_id)
     product=MyProducts.objects.get(id=product_id)
     variant=Variant.objects.get(id=variant_id)
+    if variant.discount != 0:
+        discount= variant.price * Decimal(variant.discount/100)
+    else:
+        discount=0
+    print(discount)
+
     
     existing_address = OrderAddress.objects.filter(
             user=user,
@@ -707,6 +841,7 @@ def product_checkout(request):
         user=user,
         order_address= address,
         total_price=total_price,
+        discount= discount,
         order_status=OrderStatus.objects.get(status='Pending'),
         payment=payment
     )
@@ -728,6 +863,7 @@ def product_checkout(request):
             user=user,
             order_address=order_address,
             total_price=total_price,
+            discount= discount,
             order_status=OrderStatus.objects.get(status='Pending'),
             payment=payment
         )   
@@ -896,8 +1032,7 @@ def checkout(request):
 def user_orders(request):
     cart_items = cartitems.objects.filter(user=request.user)
     cart_items.delete()
-    user = CustomUser.objects.get(name=request.user.name)
-    orders_list = Order.objects.filter(user=user)
+    orders_list = Order.objects.filter(user=request.user)
 
     orders_per_page = 3  
 
@@ -1056,6 +1191,9 @@ def generate_invoice_pdf(request, order_id):
     story.append(Spacer(1, 12))
     story.append(Paragraph("Flat off: {}".format(order.coupon_price), body_style))
     story.append(Spacer(1, 12))
+    if order.discount != 0:
+        story.append(Paragraph("Discount: {} Rs".format(order.discount), body_style))
+        story.append(Spacer(1, 12))
     story.append(Paragraph("Total Amount: {} Rs".format(order.total_price), body_style))
     story.append(Spacer(1, 12))
     story.append(Paragraph("Shipping Address:", body_style))

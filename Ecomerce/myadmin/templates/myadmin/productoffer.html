@@ -1,0 +1,69 @@
+{% extends "myadmin/adminbase.html" %}
+
+{% block main %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+<div class="container mt-5">
+    <h1>Product List</h1>
+    <table class="table table-bordered table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Color</th>
+          <th>Actual Price</th>
+          <th>Offer</th>
+          <th>Offer Price</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for variant in variants %}
+          <tr>
+            <td>{{ variant.product_id.name }}</td>
+            <td style="max-width: 300px;">{{ variant.product_id.category.name }}</td>
+            <td>{{ variant.color.name }}</td>
+            <td>{{ variant.price }} Rs</td>
+            <td> {{variant.discount}} </td>
+            <td> {{variant.discount_price}} </td>
+            <td > <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#offerModal{{ variant.id }}">Offer</a>
+            </td>
+          </tr>
+
+      <!-- Modal for each variant -->
+      <div class="modal fade" id="offerModal{{ variant.id }}" tabindex="-1" role="dialog" aria-labelledby="offerModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="offerModalLabel">Create Offer for {{ variant.product_id.name }} - {{ variant.color.name }}</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <form id="offerForm{{ variant.id }}" action="{% url 'add_offer' %}" method="post">
+                {% csrf_token %}
+                <label for="discount">Offer percentage </label>
+                <input type="number" name="discount" value="">
+                <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        {% endfor %}
+      </tbody>
+    </table>
+    <a href="{% url "categoryoffer" %}" class="btn btn-info">Category offer</a>
+  </div>
+
+{% endblock %}
