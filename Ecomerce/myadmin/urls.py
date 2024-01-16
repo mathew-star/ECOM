@@ -3,6 +3,8 @@ from . import views
 urlpatterns = [
     path('',views.adminlogin,name='adminlogin'),
     path('adminhome/', views.adminhome, name='adminhome'),
+    path('sales/',views.sales,name="sales"),
+    path('sales_report/<str:format>/', views.sales_report, name='sales_report'),
     path('charts/', views.charts, name='charts'),
     path('order_chart/', views.order_chart, name='order_chart'),
     path('get_monthly_chart_data/',views.get_monthly_chart_data,name="get_monthly_chart_data"),
@@ -33,5 +35,6 @@ urlpatterns = [
     path('add_offer/',views.addoffer,name="add_offer"),
     path('add_category_offer/',views.add_category_offer,name="add_category_offer" ),
     path('adminhome/', views.adminhome, name='adminhome'),
+    path('referal/',views.referal,name="referal"),
 
 ] 

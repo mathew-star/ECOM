@@ -399,6 +399,7 @@ document.getElementById('couponSelect').addEventListener('change', function () {
         .then(response => response.json())
         .then(data => {
             if ('discount' in data) {
+              console.log(data)
                 updateTotalAmount(data.discount);
                 document.getElementById('selectedCouponCode').value = selectedCouponCode;
             } else if ('error' in data) {

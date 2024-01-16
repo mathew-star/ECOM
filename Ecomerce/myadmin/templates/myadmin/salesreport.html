@@ -1,0 +1,49 @@
+{% extends "myadmin/adminbase.html" %}
+
+{% block main %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+  <div class="container">
+    <h2 class="mt-3">Sales Report</h2>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <form method="get" action="{% url 'sales_report' format='pdf' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="end_date">End Date:</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Generate PDF Report</button>
+        </form>
+      </div>
+
+      <div class="col-md-6">
+        <form method="get" action="{% url 'sales_report' format='excel' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="end_date">End Date:</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+          </div>
+
+          <button type="submit" class="btn btn-success">Generate Excel Report</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock main %}

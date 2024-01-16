@@ -558,10 +558,14 @@ def cart_order(request):
     
 
     total_price = sum([item.total_price for item in cart_items])
-    print(total_price)
+
+
+    today = date.today()
     valid_coupons = MyCoupons.objects.filter(
-        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+        Q(min_purchase_amount__lte=total_price) &
+        Q(expiry_date__gte=today)
     )
+    
     sub_total = sum (item.variant.price*item.quantity for item in cart_items)
     discount = round(sum (item.variant.price*Decimal(item.variant.discount/100) for item in cart_items),2)
 
@@ -583,6 +587,7 @@ def cart_order(request):
 def get_coupon_discount(request, coupon_id):
     try:
         coupon = MyCoupons.objects.get(id=coupon_id)
+
         if coupon.is_valid():
             return JsonResponse({'discount': coupon.discount_price})
         else:
@@ -709,7 +714,7 @@ def singleproduct_checkout(request):
                 offerpercentage= request.POST['offer_percentage']
             except:
                 pass
-            print (quantity)   
+   
          
         user = request.user
         
@@ -746,7 +751,7 @@ def singleproduct_checkout(request):
         valid_coupons = MyCoupons.objects.filter(
         Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
     )
-
+        print(valid_coupons)
         
         context={
             'product':product,

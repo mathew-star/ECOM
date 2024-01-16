@@ -167,7 +167,7 @@ class Order(models.Model):
     #             hourly_data[index]['cancelled_orders_count'] = entry['cancelled_orders_count']
 
     #     return hourly_data
-        
+    
     @classmethod
     def get_daily_orders_chart_data(cls):
         today = timezone.now().date()

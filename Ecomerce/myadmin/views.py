@@ -1,6 +1,11 @@
 import random
 import string
 import json
+import pytz
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from openpyxl import Workbook
+from django.http import HttpResponse
 from django.db.models import Count
 from calendar import month_abbr
 from decimal import Decimal
@@ -20,7 +25,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.forms import inlineformset_factory
 from myadmin.forms import CategoryForm
 from django.views.decorators.http import require_POST
-from users.models import Order, OrderStatus,MyCoupons,OrderItem
+from users.models import Order, OrderStatus,MyCoupons,OrderItem,Referral
 from datetime import datetime
 from datetime import timedelta
 from django.db.models import Sum
@@ -619,3 +624,98 @@ def get_yearly_chart_data(request):
     data = [year['count'] for year in orders]
 
     return render(request, "myadmin/charts.html", {'labels': labels, 'data': data, 'chart_type': 'yearly'})
+
+
+def sales(request):
+    return render(request, "myadmin/salesreport.html")
+    
+def sales_report(request,format):
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+    
+        # Date validation
+    today = timezone.now().date()
+
+    if start_date > today:
+        messages.error(request,"Start date cannot be in the future")
+        return redirect('sales')
+    
+    if end_date > today:
+        messages.error(request,"End date cannot be in the future")
+        return redirect('sales')
+    
+
+    if end_date < start_date:
+        messages.error(request,"End date cannot be before start date")
+        return redirect('sales')
+
+
+
+    if format == 'pdf':
+        return generate_pdf(start_date, end_date)
+    elif format == 'excel':
+        return generate_excel(start_date, end_date)
+    else:
+        return HttpResponse("Invalid format", status=400)
+
+def generate_pdf(start_date, end_date):
+    orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
+
+    template_path = 'myadmin/admin_pdf_salesreport.html'
+    context = {'orders': orders}
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="sales_report_{start_date}_{end_date}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+
+    pisa_status = pisa.CreatePDF(html, dest=response, encoding='UTF-8')
+    if pisa_status.err:
+        return HttpResponse('We had some errors <pre>' + html + '</pre>')
+
+    return response
+
+def generate_excel(start_date, end_date):
+   orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
+
+   response = HttpResponse(content_type='application/ms-excel')
+   response['Content-Disposition'] = f'attachment; filename="sales_report_{start_date}_{end_date}.xlsx"'
+
+   wb = Workbook()
+   ws = wb.active
+   ws.title = "Sales report"
+
+   headers = ["Order ID", "Date", "Products", "User", "Price", "Quantity", "Payment"]
+   ws.append(headers)
+
+   for order in orders:
+
+       created_at = order.created_at.astimezone(pytz.UTC).replace(tzinfo=None)
+
+       product_names = ", ".join([item.variant.product_id.name for item in order.orderitem_set.all()])
+
+       ws.append([
+           f"ORD{order.id}",
+           created_at,
+           product_names,
+           order.user.name,
+           order.total_price,
+           order.orderitem_set.aggregate(Sum('quantity'))['quantity__sum'],
+           order.payment
+       ])
+
+   wb.save(response)
+   return response
+
+
+def referal(request):
+    refer= Referral.objects.all()
+    
+    return render(request,"myadmin/referal.html", {'refer':refer})

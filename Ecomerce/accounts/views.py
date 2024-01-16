@@ -130,6 +130,9 @@ def signup(request):
                 try:
                     referral = Referral.objects.get(code=referral_code)
                     referred_by_user = referral.user
+                    refer= Referral.objects.get(user=user)
+                    refer.referred_by = referred_by_user
+                    refer.save()
 
                     user_wallet = Wallet_user.objects.get_or_create(user=user)[0]
                     user_wallet.amount += 50
@@ -279,6 +282,7 @@ def home(request):
         return redirect('signup')
     cart_items = cartitems.objects.filter(user=request.user)
     bag_count= cartitems.objects.filter(user=request.user).count()
+    
 
     categories= Category.objects.all()
     products= MyProducts.objects.all()
