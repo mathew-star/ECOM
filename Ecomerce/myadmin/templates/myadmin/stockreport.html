@@ -1,0 +1,41 @@
+{% extends "myadmin/adminbase.html" %}
+
+{% block main %}
+{% for message in messages %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+<div class="container mt-5">
+    <h1>Product List</h1>
+    <table class="table table-bordered table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Color</th>
+          <th>Actual Price</th>
+          <th>Stock added </th>
+          <th>Stock left</th>
+
+        </tr>
+      </thead>
+      <tbody>
+        {% for variant in variants %}
+          <tr>
+            <td>{{ variant.product_id.name }}</td>
+            <td style="max-width: 300px;">{{ variant.product_id.category.name }}</td>
+            <td>{{ variant.color.name }}</td>
+            <td>{{ variant.price }} Rs</td>
+            <td> {{variant.stock_added}} </td>
+            <td> {{variant.quantity}} </td>
+
+          </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

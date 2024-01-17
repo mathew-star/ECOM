@@ -163,9 +163,7 @@
           {% endif %}
          </p>
 
-         <div class="btn-wrapper" style="float: left;">
-          <a class="btn btn-primary wishlist-btn" href="{% url "add_to_wishlist" product.id variant.id %}">Add to wishlist</a>
-       </div>
+        
         <!-- Buttons -->
         <div class="d-flex">
           
@@ -195,6 +193,9 @@
             <input type="hidden" name="quantity" id="cartquantityInput" value="1">
             <button id="addToCartButton" type="submit" class="btn mt-5  ms-3" style="background-color: #A7A9BA;">Add to Cart</button>
           </form>
+          {% comment %} <div class="btn-wrapper" style="float: left;">
+            <a class="btn btn-primary wishlist-btn" href="{% url "add_to_wishlist" product.id variant.id %}">Add to wishlist</a>
+         </div> {% endcomment %}
           </div>
           
       </div>

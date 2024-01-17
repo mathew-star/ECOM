@@ -1,6 +1,102 @@
 {% extends "myadmin/adminbase.html" %}
 
 {% block css %} 
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container-fluid {
+    margin-top: 20px;
+  }
+  
+  /* Cards styles */
+  .card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .info-card {
+    background-color: #ffffff;
+  }
+  
+  .sales-card {
+    border-left: 4px solid #007bff;
+  }
+  
+  .revenue-card {
+    border-left: 4px solid #28a745;
+  }
+  
+  .customers-card {
+    border-left: 4px solid #dc3545;
+  }
+  
+  /* Card title styles */
+  .card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  /* Card body styles */
+  .card-body {
+    padding: 20px;
+    background-color: lightgrey;
+  }
+  
+  /* Card icon styles */
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  /* Center container styles */
+  .center-container {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  /* Daily Chart styles */
+  #dailyOrdersChart {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Jumbotron styles */
+  .jumbotron {
+    background-color: #aeacb9;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 30px;
+    margin-bottom: 20px;
+  }
+  .row-cols-md-2 > .col {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+.row-cols-xxl-3 > .col {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+}
+  
+  /* Responsive styles */
+  @media (max-width: 576px) {
+    .col-xxl-3 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+
+</style>
 {% endblock %}
 
 {% block main %}
@@ -9,26 +105,25 @@
       <!-- Content area -->
       <div class="col-sm-9 col-md-10 pt-3">
         <div class="jumbotron text-center admin-box" style="background-color: #aeacb9;">
-          <h1 class="display-4 admin-card">Welcome <span th:text="${username}" style="font-weight: bold; color: white;"></span></h1>
-          <p class="admin-card">Easily manage your profile </p>
+          <h1 class="display-4 admin-card text-black">Welcome <span th:text="${username}" style="font-weight: bold; color: white;"></span></h1>
+          <p class="admin-card text-black">Easily manage your profile </p>
         </div>
 
 
-
-        <div class="col-lg-12">
-          <div class="row">
-          
-
+        <div class="container-fluid">
+          <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-3">
+            
             <!-- Sales Card -->
-            <div class="col-xxl-3 col-md-6">
+            <div class="col">
               <div class="card info-card sales-card">
                 <div class="card-body">
                   <h5 class="card-title">Sales <span>| Today</span></h5>
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                      <i class="fa-solid fa-cart-shopping fa-lg" style="color: #000000;"></i>                    </div>
+                      <i class="fa-solid fa-cart-shopping fa-lg" style="color: #000000;"></i>
+                    </div>
                     <div class="ps-3">
-                      <h6><%= ordersToday %> orders</h6>
+                      <h6> {{total_sales_today}} </h6>
                       <span class="text-success small pt-1 fw-bold">12%</span>
                       <span class="text-muted small pt-2 ps-1">increase</span>
                     </div>
@@ -37,18 +132,18 @@
               </div>
             </div>
             <!-- End Sales Card -->
-
+        
             <!-- Revenue Card -->
-            <div class="col-xxl-3 col-md-6">
+            <div class="col">
               <div class="card info-card revenue-card">
                 <div class="card-body">
                   <h5 class="card-title">Revenue <span>| This Month</span></h5>
                   <div class="d-flex align-items-center">
                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-<i class="fa-solid fa-indian-rupee-sign" style="color: #000000;"></i>
+                      <i class="fa-solid fa-indian-rupee-sign" style="color: #000000;"></i>
                     </div>
                     <div class="ps-3">
-                      <h6>₹<%= revenue.toFixed(2) %></h6>
+                      <h6>₹ {{total_revenue_this_month}} </h6>
                       <span class="text-success small pt-1 fw-bold">8%</span>
                       <span class="text-muted small pt-2 ps-1">increase</span>
                     </div>
@@ -56,48 +151,52 @@
                 </div>
               </div>
             </div>
-
-           
             <!-- End Revenue Card -->
-
-            <!-- Customers Card -->
-          
-              <!-- PaymentOption div -->
-              <div class="col-xxl-3 col-xl-12">
-                <div class="card info-card customers-card">
-                  <div class="card-body">
-                    <h5 class="card-title">PaymentOption</h5>
-                    <div class="d-flex align-items-center">
-                      <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="fa-solid fa-bag-shopping fa-lg" style="color: #000000;"></i>                      </div>
-                      <div class="ps-3">
-                        <h6><%= highestOrderPaymentOption._id  %> </h6>
-                        <span class="text-danger small pt-1 fw-bold">High</span>
-                        <span class="text-muted small pt-2 ps-1">demand</span>
-                      </div>
+        
+            <!-- PaymentOption Card -->
+            <div class="col">
+              <div class="card info-card customers-card">
+                <div class="card-body">
+                  <h5 class="card-title">PaymentOption</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="fa-solid fa-bag-shopping fa-lg" style="color: #000000;"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6> {{high_demand_payment_option}} </h6>
+                      <span class="text-black small pt-1 fw-bold">Orders: {{payment_order_count}} </span>
+                      <span class="text-danger small pt-1 fw-bold">High</span>
+                      <span class="text-muted small pt-2 ps-1">demand</span>
                     </div>
                   </div>
                 </div>
               </div>
-            
-              <!-- Category div -->
-              <div class="col-xxl-3 col-xl-12"> <!-- Adjust the column size as needed -->
-                <div class="card info-card customers-card">
-                  <div class="card-body">
-                    <h5 class="card-title">Category</h5>
-                    <div class="d-flex align-items-center">
-                      <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                        <i class="fa-solid fa-bag-shopping fa-lg" style="color: #000000;"></i>                      </div>
-                      <div class="ps-3">
-                        <h6><%= highestOrderCategory._id %> </h6>
-                        <span class="text-danger small pt-1 fw-bold">High</span>
-                        <span class="text-muted small pt-2 ps-1">demand</span>
-                      </div>
+            </div>
+            <!-- End PaymentOption Card -->
+        
+            <!-- Category Card -->
+            <div class="col">
+              <div class="card info-card customers-card">
+                <div class="card-body">
+                  <h5 class="card-title">Category</h5>
+                  <div class="d-flex align-items-center">
+                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                      <i class="fa-solid fa-bag-shopping fa-lg" style="color: #000000;"></i>
+                    </div>
+                    <div class="ps-3">
+                      <h6> {{high_demand_category}} </h6>
+                      <span class="text-danger small pt-1 fw-bold">High</span>
+                      <span class="text-muted small pt-2 ps-1">demand</span>
                     </div>
                   </div>
                 </div>
               </div>
-              </div>
+            </div>
+            <!-- End Category Card -->
+        
+          </div>
+        </div>
+        
 
         <div class="center-container">
           <h4>Daily Chart</h4>

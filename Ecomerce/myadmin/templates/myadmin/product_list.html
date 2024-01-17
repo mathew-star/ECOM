@@ -8,7 +8,7 @@
         <tr>
           <th>Name</th>
           <th>Description</th>
-          <th>Price</th>
+
           <th>Category</th>
           <th>Image</th>
           <th>Actions</th>
@@ -19,7 +19,7 @@
           <tr>
             <td>{{ product.name }}</td>
             <td style="max-width: 300px;">{{ product.description }}</td>
-            <td>{{ product.price }}Rs</td>
+
             <td>{{ product.category.name }}</td>
             <td>
               {% for img in product.productimages_set.all %}

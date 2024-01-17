@@ -2,6 +2,13 @@ import random
 import string
 import json
 import pytz
+from PIL import Image
+from django.core.files.images import get_image_dimensions
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_image_file_extension
+from datetime import datetime
+import datetime
+from django.db.models.functions import TruncMonth
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from openpyxl import Workbook
@@ -248,6 +255,20 @@ def product_list(request):
     }
     return render(request, 'myadmin/product_list.html', context)
 
+def is_valid_image(file):
+    try:
+
+        width, height = get_image_dimensions(file)
+
+        if width is not None and height is not None and isinstance(width, int) and isinstance(height, int):
+            return width > 0 and height > 0
+        else:
+            return False
+    except ValidationError:
+        return False
+
+
+
 def edit_product(request, product_id):
     
     category=Category.objects.all()
@@ -263,6 +284,11 @@ def edit_product(request, product_id):
         product_category = request.POST.get('category')
         product_is_listed = request.POST.get('is_listed') == 'on'
 
+        if not product_name:
+            messages.error(request, 'Please provide a product name.')
+            return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+
+
         product.name = product_name
         product.description = product_description
         product.category_id = product_category
@@ -274,25 +300,45 @@ def edit_product(request, product_id):
             quantity = request.POST.get(f'quantity_{variant.id}')
             price = request.POST.get(f'price_{variant.id}')
             is_listed = request.POST.get(f'is_listed_{variant.id}') == 'on'
+            if not color_name:
+                messages.error(request, 'Please provide a color name for all variants.')
+                return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+
+            if not quantity.isdigit() or int(quantity) <= 0:
+                messages.error(request, 'Please provide a valid quantity for all variants.')
+                return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+            
+            if float(price) <= 0:
+                messages.error(request, 'Please provide a valid price for all variants.')
+                return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+
 
             variant.color.name = color_name
             variant.quantity = quantity
+            variant.stock_added = quantity
             variant.price = price
             variant.is_listed = is_listed
             variant.save()
             for image in images:
                 image_field_name = f'image_{variant.id}_{image.id}'
 
-                print(variant.color.name)
                 if request.FILES.get(image_field_name):
-                    print(request.FILES.get(image_field_name))
-                    print("in var im")
                     image.image = request.FILES[image_field_name]
+                    new_image = request.FILES[image_field_name]
+                    if not is_valid_image(new_image):
+                        messages.error(request, 'Invalid image file format. Please upload a valid image file.')
+                        return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+
                     image.save()
+
 
             new_image_field_name = f'new_image_{variant.id}'
             new_image = request.FILES.get(new_image_field_name)
             if new_image:
+                if not is_valid_image(new_image):
+                        messages.error(request, 'Invalid image file format. Please upload a valid image file.')
+                        return render(request, 'myadmin/edit_product.html', {'product': product, 'variants': variants, 'images': images, 'category': category})
+
                 ProductImages.objects.create(product=product, color=variant.color, image=new_image)
 
         return redirect('product_list')
@@ -318,13 +364,28 @@ def add_variant(request, product_id):
         is_listed = request.POST.get('is_listed') == 'on'
 
         color= Color.objects.create(name=color_name)
+        if not color_name:
+                messages.error(request, 'Please provide a color name for all variants.')
+                return render(request, "myadmin/add_variants.html",context)
 
-        variant = Variant(color=color, product_id=product, quantity=quantity, price=price, is_listed=is_listed)
+        if not quantity.isdigit() or int(quantity) <= 0:
+                messages.error(request, 'Please provide a valid quantity for all variants.')
+                return render(request, "myadmin/add_variants.html",context)
+        if float(price) <= 0:
+                messages.error(request, 'Please provide a valid price for all variants.')
+                return render(request, "myadmin/add_variants.html",context)
+
+
+        variant = Variant(color=color, product_id=product,stock_added=quantity, quantity=quantity, price=price, is_listed=is_listed)
         variant.save()
         for i in range(1, 5):
                 image = request.FILES.get(f'image{i}')
                 if image:
-                    ProductImages.objects.create(product=product, color=color, image=image)
+                        if not is_valid_image(image):
+                            messages.error(request, 'Invalid image file format. Please upload a valid image file.')
+                            return render(request, "myadmin/add_variants.html",context)
+
+                        ProductImages.objects.create(product=product, color=color, image=image)
 
         return redirect('product_list')
 
@@ -340,7 +401,10 @@ def delete_product(request, product_id):
     return redirect('product_list')
 
 def add_product(request):
+    categories = Category.objects.all()
+
     if request.method == "POST":
+        # Extracting form data
         product_name = request.POST.get('name')
         product_description = request.POST.get('description')
         product_category = request.POST.get('category')
@@ -350,56 +414,56 @@ def add_product(request):
         price = request.POST.get('price')
         is_listed = request.POST.get('is_listed') == 'on'
 
-        if not product_name:
-            messages.error(request, 'Product name is required.')
+        # Validations
+        if not product_name or not product_description or not product_category or not color_name:
+            messages.error(request, 'All fields are required.')
             return redirect('add_product')
 
-        if not product_description:
-            messages.error(request, 'Product description is required.')
+        if not quantity.isdigit() or int(quantity) <= 0:
+            messages.error(request, 'Please provide a valid quantity.')
             return redirect('add_product')
 
-        if not product_category:
-            messages.error(request, 'Product category is required.')
+        if not price.replace('.', '').isdigit() or float(price) <= 0:
+            messages.error(request, 'Please provide a valid price.')
             return redirect('add_product')
 
-        if not color_name:
-            messages.error(request, 'Color name is required.')
-            return redirect('add_product')
-
-        if not quantity or not quantity.isdigit():
-            messages.error(request, 'Invalid quantity. Please enter a numeric value.')
-            return redirect('add_product')
-
-
-
-
-        if not price or not price.replace('.', '').isdigit():
-            messages.error(request, 'Invalid price. Please enter a numeric value.')
-            return redirect('add_product')
-
+        # Create and save product, color, and variant
         product = MyProducts(name=product_name, description=product_description, category_id=product_category)
         product.save()
 
-        color= Color.objects.create(name=color_name)
-
-        variant = Variant(color=color, product_id=product, quantity=quantity, price=price, is_listed=is_listed)
+        color = Color.objects.create(name=color_name)
+        variant = Variant(color=color, product_id=product, stock_added=quantity, quantity=quantity, price=price, is_listed=is_listed)
         variant.save()
-        images = [request.FILES.get(f'image{i}') for i in range(1, 5)]
-        if not any(images):
-            messages.error(request, 'At least one image is required.')
-            return redirect('add_product')
 
-        for i in range(1, 5):
+        # Create ProductImages
+        try:
+            for i in range(1, 5):
                 image = request.FILES.get(f'image{i}')
                 if image:
+                    if not is_valid_image(image):
+                        messages.error(request, 'Invalid image file format. Please upload a valid image file.')
+                        raise ValueError('Invalid image file format')
+
                     ProductImages.objects.create(product=product, color=color, image=image)
 
-        return redirect('product_list')
-    else:
-        categories = Category.objects.all()
-        return render(request, 'myadmin/add_product.html', {'categories': categories})
-    
+        except Exception as e:
+            # Rollback: Delete the variant and product if an error occurs during image processing
+            if variant.id:
+                variant.delete()
 
+            if product.id:
+                product.delete()
+
+            messages.error(request, f'Error processing images: {str(e)}')
+            return render(request, 'myadmin/add_product.html', {'categories': categories})
+
+        return redirect('product_list')
+
+    else:
+        return render(request, 'myadmin/add_product.html', {'categories': categories})
+
+
+  
 def admin_orders(request):
     orders = Order.objects.all()
     order_statuses = OrderStatus.objects.all()
@@ -576,12 +640,36 @@ def adminhome(request):
     if request.user.is_authenticated and request.user.is_superuser:
         orders_count_today = Order.get_daily_orders_count_today()
         cancelled_orders_count_today = Order.get_daily_orders_chart_data()
+        categories = Category.objects.annotate(order_count=Count('myproducts__variant__orderitem__order__id'))
+
+        high_demand_category = categories.order_by('-order_count').first()
+
+        payment_options = Order.objects.values('payment').annotate(order_count=Count('id'))
+
+        high_demand_payment_option = payment_options.order_by('-order_count').first()
+        p=payment_options[0]
+        high_demand_payment_option=p['payment']
+        payment_order_count = p['order_count']
+        print(payment_options)
+
+        today = datetime.today().date()
+        start_of_month = today.replace(day=1)
+        total_revenue_this_month = Order.objects.filter(created_at__date__gte=start_of_month).aggregate(total_revenue=Sum('total_price'))['total_revenue']
+
+        total_sales_today = Order.objects.filter(created_at__date=today).count()
+
 
         daily_order_data = Order.get_daily_orders_chart_data()
         context = {
             "OCT": orders_count_today,
             "COCT": cancelled_orders_count_today,
-            'daily_order_data': json.dumps(daily_order_data),  # Convert data to JSON format
+            'daily_order_data': json.dumps(daily_order_data),
+            'high_demand_category':high_demand_category,
+            'high_demand_payment_option':high_demand_payment_option,
+            'payment_order_count':payment_order_count,
+            'total_revenue_this_month':total_revenue_this_month,
+            'total_sales_today':total_sales_today,
+
         }
 
         return render(request, 'myadmin/adminhome.html', context)
@@ -719,3 +807,9 @@ def referal(request):
     refer= Referral.objects.all()
     
     return render(request,"myadmin/referal.html", {'refer':refer})
+
+
+def stock_report(request):
+    products = MyProducts.objects.all()
+    variants= Variant.objects.all()
+    return render(request , "myadmin/stockreport.html",{'products':products,'variants':variants})

@@ -37,6 +37,7 @@ class MyProducts(models.Model):
 class Variant(models.Model):
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
     product_id = models.ForeignKey(MyProducts, on_delete=models.CASCADE, default=None)
+    stock_added=models.IntegerField(default=0)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price=  models.DecimalField(max_digits=10, decimal_places=2, default=0)

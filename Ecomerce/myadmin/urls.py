@@ -36,5 +36,6 @@ urlpatterns = [
     path('add_category_offer/',views.add_category_offer,name="add_category_offer" ),
     path('adminhome/', views.adminhome, name='adminhome'),
     path('referal/',views.referal,name="referal"),
+    path('stock_report/',views.stock_report,name="stock_report"),
 
 ] 

@@ -1,3 +1,5 @@
+from django.core.validators import validate_email, RegexValidator
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
 from datetime import date
 from django.utils import timezone
@@ -138,6 +140,28 @@ def shop_search_products(request):
 
         return JsonResponse({'products': product_list})
     
+def category_search_products(request):
+        if request.method == 'GET':
+            search_term = request.GET.get('search_term', '')
+            products = MyProducts.objects.filter(name__icontains=search_term)
+            
+        
+        product_list = []
+        for product in products:
+            # Get the first image for each product (you might want to adjust this logic)
+            image = ProductImages.objects.filter(product=product).first()
+            first_variant = Variant.objects.filter(product_id=product).first()
+            if image:
+                product_data = {
+
+                    'id': product.id,
+                    'name': product.name,
+                    'image': image.image.url,
+                    'price': first_variant.price
+                }
+                product_list.append(product_data)
+
+        return JsonResponse({'products': product_list})
 
 
 def get_product_details(request,colorid):
@@ -312,6 +336,20 @@ def add_address(request):
         city = request.POST.get('city')
         state = request.POST.get('state')
 
+        if not all([name, phone, pincode, locality, address_text, city, state]):
+            messages.error(request, 'Please fill in all the fields.')
+            return render(request, 'users/add_address.html')
+
+        if not phone.isdigit():
+            messages.error(request, 'Please enter a valid phone number.')
+            return render(request, 'users/add_address.html')
+
+
+        if not (pincode.isdigit() and len(pincode) == 6):
+            messages.error(request, 'Please enter a valid 6-digit pin code.')
+            return render(request, 'users/add_address.html')
+
+
 
         existing_address = Address.objects.filter(
             user=request.user,
@@ -368,6 +406,16 @@ def edit_address(request, address_id):
         if not all([address.name, address.phone, address.pincode, address.locality, address.address, address.city, address.state]):
             messages.error(request, 'Please fill in all the fields.')
             return render(request, 'users/edit_address.html', {'address': address})
+
+        if not address.phone.isdigit():
+            messages.error(request, 'Please enter a valid phone number.')
+            return render(request, 'users/edit_address.html', {'address': address})
+
+        
+        if not (address.pincode.isdigit() and len(address.pincode) == 6):
+            messages.error(request, 'Please enter a valid 6-digit pin code.')
+            return render(request, 'users/edit_address.html', {'address': address})
+
 
         address.save()
         print(address.phone)
@@ -565,6 +613,7 @@ def cart_order(request):
         Q(min_purchase_amount__lte=total_price) &
         Q(expiry_date__gte=today)
     )
+
     
     sub_total = sum (item.variant.price*item.quantity for item in cart_items)
     discount = round(sum (item.variant.price*Decimal(item.variant.discount/100) for item in cart_items),2)
@@ -681,8 +730,10 @@ def product_check(request, product_id, color_id, variant_id, quantity):
             total_price = price * Decimal(quantity)
             discount= round(variant.price * Decimal(variant.discount/100),2)
 
+        today = date.today()
         valid_coupons = MyCoupons.objects.filter(
-        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+        Q(min_purchase_amount__lte=total_price) &
+        Q(expiry_date__gte=today)
     )
 
         
@@ -748,8 +799,10 @@ def singleproduct_checkout(request):
             total_price = price * Decimal(quantity)
             discount= round(variant.price * Decimal(variant.discount/100),2)
 
+        today = date.today()
         valid_coupons = MyCoupons.objects.filter(
-        Q(min_purchase_amount__lte=total_price) & Q(is_disabled=False)
+        Q(min_purchase_amount__lte=total_price) &
+        Q(expiry_date__gte=today)
     )
         print(valid_coupons)
         
@@ -903,6 +956,7 @@ def product_checkout(request):
     if payment == 'Online' or payment=='Wallet':
         order.payment_status = "Paid"
         order.save
+        print(order.payment_status)
 
     o_items= OrderItem.objects.get(order=order)
 
@@ -911,6 +965,7 @@ def product_checkout(request):
         'order_items':o_items,
         'order':order,
     }
+    
     return render(request , "users/order_confirm.html",context)
 
 
@@ -928,7 +983,6 @@ def checkout(request):
         messages.warning(request,"Add a Address")
         return redirect('cart_order')
     
-    
     try:
         w_user = Wallet_user.objects.get(user=user)
     except ObjectDoesNotExist:
@@ -936,8 +990,14 @@ def checkout(request):
 
     cart_items = cartitems.objects.filter(user=request.user)
     total_price = sum([item.total_price for item in cart_items])
-
-
+    discount=0
+    for i in cart_items:
+        if i.variant.discount != 0:
+            discount += i.variant.price * Decimal(i.variant.discount/100)
+        else:
+            discount=0
+    print(discount)
+    
     if coupon_code:
         coupon=MyCoupons.objects.get(coupon_code=coupon_code)
         if coupon.is_disabled == False:
@@ -971,6 +1031,7 @@ def checkout(request):
         user=user,
         order_address= address,
         total_price=total_price,
+        discount=discount,
         order_status=OrderStatus.objects.get(status='Pending'),
         payment=payment 
     )
@@ -992,6 +1053,7 @@ def checkout(request):
             user=user,
             order_address=order_address,
             total_price=total_price,
+            discount=discount,
             order_status=OrderStatus.objects.get(status='Pending'),
             payment= payment
         )
@@ -1060,6 +1122,7 @@ def user_orders(request):
 def order_detail(request, oid):
     order = get_object_or_404(Order, order_id=oid)
     order_items = OrderItem.objects.filter(order=order)
+    
 
     if order.order_status.status == 'Pending':
         progress_percentage = 0
@@ -1172,7 +1235,7 @@ def order_return(request,order_id):
 
 def generate_invoice_pdf(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-
+    order_date = order.created_at.strftime('%b. %d, %Y, %I:%M %p')
     buffer = BytesIO()
     pdf_title = f'Invoice'
     pdf = SimpleDocTemplate(buffer, pagesize=letter)
@@ -1186,9 +1249,7 @@ def generate_invoice_pdf(request, order_id):
     story.append(Spacer(1, 12))
     story.append(Paragraph("Order Number: {}".format(order.order_id), title_style))
     story.append(Spacer(1, 12))
-    story.append(Paragraph("Order Date: {}".format(order.created_at), body_style))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph("Payment Status: {}".format(order.payment_status), body_style))
+    story.append(Paragraph("Order Date: {}".format(order_date), body_style))
     story.append(Spacer(1, 12))
     story.append(Paragraph("Payment Method: {}".format(order.payment), body_style))
     story.append(Spacer(1, 12))
