@@ -10,6 +10,7 @@ urlpatterns = [
     path('search_products/<str:category>/', views.shop_search_products, name='category_search_products'),
     path('edituser/<int:user_id>/', views.edituser, name='edituser'),
     path('add_address/', views.add_address, name='add_address'),
+    path('checkout_address/',views.checkout_address,name="checkout_address"),
     path('remove_address/<int:address_id>/',views.remove_address,name="remove_address"),
     path('edit_address/<int:address_id>/', views.edit_address, name='edit_address'),
     path('get_product_details/<int:colorid>/', views.get_product_details, name='get_product_details'),

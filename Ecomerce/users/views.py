@@ -141,7 +141,7 @@ def shop_search_products(request,category=None):
                     'name': product.name,
                     'image': image.image.url,
                     'price': first_variant.price,
-                    
+
                 }
                 product_list.append(product_data)
 
@@ -391,6 +391,63 @@ def add_address(request):
         return redirect('userprofile')
 
     return render(request, 'users/add_address.html')
+
+def checkout_address(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        phone = request.POST.get('phone')
+        pincode = request.POST.get('pincode')
+        locality = request.POST.get('locality')
+        address_text = request.POST.get('address')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+
+        if not all([name, phone, pincode, locality, address_text, city, state]):
+            messages.error(request, 'Please fill in all the fields.')
+            return render(request, 'users/checkout_address.html')
+
+        if not phone.isdigit():
+            messages.error(request, 'Please enter a valid phone number.')
+            return render(request, 'users/checkout_address.html')
+
+
+        if not (pincode.isdigit() and len(pincode) == 6):
+            messages.error(request, 'Please enter a valid 6-digit pin code.')
+            return render(request, 'users/checkout_address.html')
+
+
+
+        existing_address = Address.objects.filter(
+            user=request.user,
+            name=name,
+            phone=phone,
+            pincode=pincode,
+            locality=locality,
+            address=address_text,
+            city=city,
+            state=state
+        ).exists()
+
+        if existing_address:
+            messages.error(request, 'Address already exists for this user.')
+            return render(request, 'users/checkout_address.html')
+
+
+        new_address = Address(
+            user=request.user,
+            name=name,
+            phone=phone,
+            pincode=pincode,
+            locality=locality,
+            address=address_text,
+            city=city,
+            state=state
+        )
+        new_address.save()
+
+        messages.success(request, 'Address added successfully.')
+        return redirect('cart_order')
+    return render(request,"users/checkout_address.html")
 
 def remove_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
@@ -989,123 +1046,123 @@ def checkout(request):
         address_id = request.POST.get('address_id') 
         payment= request.POST.get('selected_payment_option')
         coupon_code=request.POST.get('selected_coupon_code')
-    if address_id:
-        selected_address = Address.objects.get(id=address_id)
-    else:
-        messages.warning(request,"Add a Address")
-        return redirect('cart_order')
-    
-    try:
-        w_user = Wallet_user.objects.get(user=user)
-    except ObjectDoesNotExist:
-        w_user = None
-
-    cart_items = cartitems.objects.filter(user=request.user)
-    total_price = sum([item.total_price for item in cart_items])
-    discount=0
-    for i in cart_items:
-        if i.variant.discount != 0:
-            discount += i.variant.price * Decimal(i.variant.discount/100)
+        if address_id:
+            selected_address = Address.objects.get(id=address_id)
         else:
-            discount=0
-    print(discount)
-    
-    if coupon_code:
-        coupon=MyCoupons.objects.get(coupon_code=coupon_code)
-        if coupon.is_disabled == False:
-            total_price=total_price-coupon.discount_price
-        else:
-            messages.info(request,'This Coupon is not valid now!')
+            messages.warning(request,"Add a Address")
             return redirect('cart_order')
+        
+        try:
+            w_user = Wallet_user.objects.get(user=user)
+        except ObjectDoesNotExist:
+            w_user = None
 
-    existing_address = OrderAddress.objects.filter(
-            user=user,
-            name= selected_address.name,
-            phone=selected_address.phone,
-            pincode= selected_address.pincode,
-            locality= selected_address.locality,
-            address=selected_address.address,
-            city= selected_address.city,
-            state= selected_address.state 
-        ).exists()
-    if existing_address:
-        address = OrderAddress.objects.get(
-            user=user,
-            name= selected_address.name,
-            phone=selected_address.phone,
-            pincode= selected_address.pincode,
-            locality= selected_address.locality,
-            address=selected_address.address,
-            city= selected_address.city,
-            state= selected_address.state 
-        )
-        order = Order.objects.create(
-        user=user,
-        order_address= address,
-        total_price=total_price,
-        discount=discount,
-        order_status=OrderStatus.objects.get(status='Pending'),
-        payment=payment 
-    )
-    else:
-        order_address= OrderAddress(
-        user= user,
-        name= selected_address.name,
-        phone=selected_address.phone,
-        pincode= selected_address.pincode,
-        locality= selected_address.locality,
-        address=selected_address.address,
-        city= selected_address.city,
-        state= selected_address.state 
-         
-    )
-        order_address.save() 
+        cart_items = cartitems.objects.filter(user=request.user)
+        total_price = sum([item.total_price for item in cart_items])
+        discount=0
+        for i in cart_items:
+            if i.variant.discount != 0:
+                discount += i.variant.price * Decimal(i.variant.discount/100)
+            else:
+                discount=0
+        print(discount)
+        
+        if coupon_code:
+            coupon=MyCoupons.objects.get(coupon_code=coupon_code)
+            if coupon.is_disabled == False:
+                total_price=total_price-coupon.discount_price
+            else:
+                messages.info(request,'This Coupon is not valid now!')
+                return redirect('cart_order')
 
-        order = Order.objects.create(
+        existing_address = OrderAddress.objects.filter(
+                user=user,
+                name= selected_address.name,
+                phone=selected_address.phone,
+                pincode= selected_address.pincode,
+                locality= selected_address.locality,
+                address=selected_address.address,
+                city= selected_address.city,
+                state= selected_address.state 
+            ).exists()
+        if existing_address:
+            address = OrderAddress.objects.get(
+                user=user,
+                name= selected_address.name,
+                phone=selected_address.phone,
+                pincode= selected_address.pincode,
+                locality= selected_address.locality,
+                address=selected_address.address,
+                city= selected_address.city,
+                state= selected_address.state 
+            )
+            order = Order.objects.create(
             user=user,
-            order_address=order_address,
+            order_address= address,
             total_price=total_price,
             discount=discount,
             order_status=OrderStatus.objects.get(status='Pending'),
-            payment= payment
+            payment=payment 
         )
+        else:
+            order_address= OrderAddress(
+            user= user,
+            name= selected_address.name,
+            phone=selected_address.phone,
+            pincode= selected_address.pincode,
+            locality= selected_address.locality,
+            address=selected_address.address,
+            city= selected_address.city,
+            state= selected_address.state 
+            
+        )
+            order_address.save() 
 
-    if coupon_code:
-        order.coupon_code = coupon_code
-        order.coupon_price = coupon.discount_price
-        order.save()
+            order = Order.objects.create(
+                user=user,
+                order_address=order_address,
+                total_price=total_price,
+                discount=discount,
+                order_status=OrderStatus.objects.get(status='Pending'),
+                payment= payment
+            )
+
+        if coupon_code:
+            order.coupon_code = coupon_code
+            order.coupon_price = coupon.discount_price
+            order.save()
 
 
-    for item in cart_items:
-        order_items= OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
-        variant = get_object_or_404(Variant, id=item.variant.id)
-        variant.quantity -= item.quantity
-        variant.save()
-    
-    if payment == 'Wallet' and w_user:
-            if w_user.amount >= total_price:
-                w_user.amount -= total_price
-                w_user.save()
+        for item in cart_items:
+            order_items= OrderItem.objects.create(order=order, variant=item.variant, quantity=item.quantity)
+            variant = get_object_or_404(Variant, id=item.variant.id)
+            variant.quantity -= item.quantity
+            variant.save()
+        
+        if payment == 'Wallet' and w_user:
+                if w_user.amount >= total_price:
+                    w_user.amount -= total_price
+                    w_user.save()
 
-                WalletHistory.objects.create(
-                    user=user,
-                    amount=total_price,
-                    transaction_type='debit'
-                )
-            else:
-                messages.error(request, "Insufficient funds in your wallet.")
-                return redirect('cart_order')
+                    WalletHistory.objects.create(
+                        user=user,
+                        amount=total_price,
+                        transaction_type='debit'
+                    )
+                else:
+                    messages.error(request, "Insufficient funds in your wallet.")
+                    return redirect('cart_order')
 
-    if payment == 'Online' or payment=='Wallet':
-        order.payment_status = "Paid"
-        order.save
+        if payment == 'Online' or payment=='Wallet':
+            order.payment_status = "Paid"
+            order.save
 
-    o_items= OrderItem.objects.filter(order=order)
-    context={
-        'order_items':o_items,
-        'order':order,
-    }
-    return render(request , "users/order_confirm.html",context)
+        o_items= OrderItem.objects.filter(order=order)
+        context={
+            'order_items':o_items,
+            'order':order,
+        }
+        return render(request , "users/order_confirm.html",context)
 
 
 def user_orders(request):

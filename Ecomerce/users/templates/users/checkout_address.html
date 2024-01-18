@@ -1,0 +1,141 @@
+{% extends "users/ubase.html" %}
+
+{% block main %}
+  <div class="container mt-4">
+    {% for message in messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+   {% endfor %}
+
+
+    <h2>Add Address</h2>
+    <form method="post" action="{% url 'checkout_address' %}" onsubmit="return validateForm()" >
+      {% csrf_token %}
+      
+      <div class="mb-3">
+        <label for="name" class="form-label">Name:</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+        <span id="nameError" style="color: red;"></span><br>
+      </div>
+      
+      <div class="mb-3">
+        <label for="phone" class="form-label">Phone Number:</label>
+        <input type="text" class="form-control" id="phone" name="phone" required>
+        <span id="phoneError" style="color: red;"></span><br>
+      </div>
+      
+      <div class="mb-3">
+        <label for="pincode" class="form-label">Pincode:</label>
+        <input type="text" class="form-control" id="pincode" name="pincode" required>
+        <span id="pincodeError" style="color: red;"></span><br>
+
+      </div>
+      
+      <div class="mb-3">
+        <label for="locality" class="form-label">Locality:</label>
+        <input type="text" class="form-control" id="locality" name="locality" required>
+        <span id="localityError" style="color: red;"></span><br>
+
+      </div>
+      
+      <div class="mb-3">
+        <label for="address" class="form-label">Address:</label>
+        <input type="text" class="form-control" id="address" name="address" required>
+        <span id="addressError" style="color: red;"></span><br>
+  
+      </div>
+      
+      <div class="mb-3">
+        <label for="city" class="form-label">City:</label>
+        <input type="text" class="form-control" id="city" name="city" required>
+        <span id="cityError" style="color: red;"></span><br>  
+      </div>
+      
+      <div class="mb-3">
+        <label for="state" class="form-label">State:</label>
+        <input type="text" class="form-control" id="state" name="state" required>
+        <span id="stateError" style="color: red;"></span><br>
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Add Address</button>
+    </form>
+  </div>
+{% endblock %}
+
+
+
+{% block script %}
+<script>
+  function validateForm() {
+    var name = document.getElementById('name').value;
+    var phone = document.getElementById('phone').value;
+    var pincode = document.getElementById('pincode').value;
+    var locality = document.getElementById('locality').value;
+    var address = document.getElementById('address').value;
+    var city = document.getElementById('city').value;
+    var state = document.getElementById('state').value;
+
+    var nameError = document.getElementById('nameError');
+    var phoneError = document.getElementById('phoneError');
+    var pincodeError = document.getElementById('pincodeError');
+    var localityError = document.getElementById('localityError');
+    var addressError = document.getElementById('addressError');
+    var cityError = document.getElementById('cityError');
+    var stateError = document.getElementById('stateError');
+
+    nameError.innerHTML = '';
+    phoneError.innerHTML = '';
+    pincodeError.innerHTML = '';
+    localityError.innerHTML = '';
+    addressError.innerHTML = '';
+    cityError.innerHTML = '';
+    stateError.innerHTML = '';
+
+    var isValid = true;
+
+    // Basic validation for name
+    if (name.trim() === '') {
+      nameError.innerHTML = 'Name is required.';
+      isValid = false;
+    }
+
+    // Basic validation for phone
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      phoneError.innerHTML = 'Invalid phone number format. Example: 9876543210';
+      isValid = false;
+    }
+
+    // Validation for PIN code
+    if (!/^\d{6}$/.test(pincode)) {
+      pincodeError.innerHTML = 'PIN code must be a 6-digit number.';
+      isValid = false;
+    }
+
+    // Additional validation for locality, address, city, state (you can customize this)
+    if (locality.trim() === '') {
+      localityError.innerHTML = 'Locality is required.';
+      isValid = false;
+    }
+
+    if (address.trim() === '') {
+      addressError.innerHTML = 'Address is required.';
+      isValid = false;
+    }
+
+    if (city.trim() === '') {
+      cityError.innerHTML = 'City is required.';
+      isValid = false;
+    }
+
+    if (state.trim() === '') {
+      stateError.innerHTML = 'State is required.';
+      isValid = false;
+    }
+
+    return isValid;
+  }
+</script>
+
+{% endblock %}
