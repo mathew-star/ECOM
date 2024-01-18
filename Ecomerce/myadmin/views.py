@@ -533,6 +533,8 @@ def add_new_coupon(request):
 
 def coupon_list(request):
     coupons = MyCoupons.objects.all()
+    for i in coupons:
+        print(i.coupon_code ,i.is_valid())
     return render(request,'myadmin/Coupon_list.html',{'coupons':coupons })
 
 

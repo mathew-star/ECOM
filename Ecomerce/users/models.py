@@ -69,7 +69,12 @@ class MyCoupons(models.Model):
 
 
     def is_valid(self):
-        return not self.is_disabled and timezone.now() < self.expiry_date
+        if self.expiry_date< timezone.now():
+            self.is_disabled=True
+            return False
+        else:
+            return True
+        # return not self.is_disabled and timezone.now() < self.expiry_date
     
     def save(self, *args, **kwargs):
         if not self.is_disabled and timezone.now().date() >= self.expiry_date:

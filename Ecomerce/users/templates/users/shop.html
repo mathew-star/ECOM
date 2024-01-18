@@ -98,18 +98,11 @@
             <button class="btn Apply" type="submit">Apply</button>
         </form>
 
-        {% if category %}
-
-        <div class="search-container">
-            <input type="text" id="CategorysearchInput" placeholder="Search products...">
-        </div>
-
-        {% else %}
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search products...">
         </div>
         
-        {% endif %}
+
 
     </div>
 
@@ -124,7 +117,8 @@
                 <button class="wishlist-btn" onclick="toggleWishlist(this, {{ product.id }}, {{ first_variant.id }})">
                     <i class="far fa-heart"></i>
                 </button>
-                    <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
+                    
+                <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
                 {% for img in product.productimages_set.all %}
                 {% if forloop.first %}
                   <!-- Display only the first image with a responsive class -->
@@ -159,6 +153,7 @@
 
 
 <script>
+    const referenceProductURL = "{% url 'single_product' product_id=0 %}"
     function toggleWishlist(button, productId, variantId) {
         button.classList.toggle('wishlist-selected');
         console.log("Hellooo!!");
@@ -226,24 +221,33 @@
 
     searchInput.addEventListener('input', function () {
         const searchTerm = searchInput.value;
-        fetch(`/search_products/?search_term=${searchTerm}`)
+        const category = '{{ category.name }}'; // Get the category name from the template
+        const url = category ? `/search_products/${category}/?search_term=${searchTerm}` : `/search_products/?search_term=${searchTerm}`;
+    
+        fetch(url)
             .then(response => response.json())
-            .then(data => updateProductList(data.products))
+            .then(data => updateProductList(data.products
+            ))
             .catch(error => console.error('Error:', error));
     });
 
     function updateProductList(products) {
+
+
         productContainer.innerHTML = '';
         if (products.length > 0) {
             products.forEach(product => {
+                console.log(product.id)
+
+                if (product.id) { 
+                    const prodURL = referenceProductURL.replace('0', product.id.toString());
                 const productCard = `
                         <div class="col-md-4 mb-4">
                             <div class="product-card">
                                 <button class="wishlist-btn" onclick="toggleWishlist(this, ${product.id}, ${product.variant_id})">
                                     <i id="heartIcon" class="far fa-heart"></i>
                                 </button>
-                                <a href="{% url 'single_product' 0 %}".replace('0', product.id)" class="prod-det">
-                                    <img src="${product.image}" alt="${product.name}" class="product-img img-fluid">
+                                <a href="${prodURL}" class="prod-det">                                    <img src="${product.image}" alt="${product.name}" class="product-img img-fluid">
                                 </a>
                                 <div class="product-info">
                                     <h5 class="product-name">${product.name}</h5>
@@ -252,13 +256,16 @@
                             </div>
                         </div>
                     `;
+
                 productContainer.innerHTML += productCard;
+                    }
             });
         } else {
             // Display a message when no products are found
             productContainer.innerHTML = '<h2 style="height:100vh;">No products found</h2>';
         }
     }
+
 
 </script>
 {% endblock %}

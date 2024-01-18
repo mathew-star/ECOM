@@ -13,6 +13,7 @@
         <th scope="col">Created Date</th>
         <th scope="col">Expiry Date</th>
         <th scope="col">Minimum Purchase Amount</th>
+        <th scope="col">State</th>
         <th scope="col">Discount Price</th>
       </tr>
     </thead>
@@ -26,6 +27,11 @@
             </td>
           <td>{{ coupon.expiry_date }}</td>
           <td>{{ coupon.min_purchase_amount }}</td>
+          {% if coupon.is_valid %}
+          <td>Active</td>
+          {% else %}
+          <td>Expired</td>
+          {% endif %}
           <td>{{ coupon.discount_price }}</td>
         </tr>
       {% endfor %}

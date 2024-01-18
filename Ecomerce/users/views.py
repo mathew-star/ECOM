@@ -1,3 +1,5 @@
+
+from datetime import datetime, date
 from django.core.validators import validate_email, RegexValidator
 from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
@@ -117,15 +119,19 @@ def search_product(request):
   return redirect('home')
 
 
-def shop_search_products(request):
+def shop_search_products(request,category=None):
     if request.method == 'GET':
         search_term = request.GET.get('search_term', '')
-        products = MyProducts.objects.filter(name__icontains=search_term)
+        if category:
+            category_obj = get_object_or_404(Category, name=category)
+            products = MyProducts.objects.filter(category=category_obj, name__icontains=search_term)
+        else:
+            products = MyProducts.objects.filter(name__icontains=search_term)
         
         
         product_list = []
         for product in products:
-            # Get the first image for each product (you might want to adjust this logic)
+
             image = ProductImages.objects.filter(product=product).first()
             first_variant = Variant.objects.filter(product_id=product).first()
             if image:
@@ -134,11 +140,13 @@ def shop_search_products(request):
                     'id': product.id,
                     'name': product.name,
                     'image': image.image.url,
-                    'price': first_variant.price
+                    'price': first_variant.price,
+                    
                 }
                 product_list.append(product_data)
 
         return JsonResponse({'products': product_list})
+
     
 def category_search_products(request):
         if request.method == 'GET':
@@ -597,7 +605,7 @@ def cart_order(request):
             print(item.quantity)
             print(item.variant.quantity)
             print(item.quantity>item.variant.quantity)
-            if item.quantity>(item.variant.quantity-2):
+            if item.quantity>(item.variant.quantity-2) and item.quantity> 0:
                 messages.error(request,f"{item.product.name} is Out of stock, decrease the quantity or come later ")
                 return redirect('cartitems_list')
             if item.variant.quantity < 2:
@@ -609,10 +617,12 @@ def cart_order(request):
 
 
     today = date.today()
-    valid_coupons = MyCoupons.objects.filter(
-        Q(min_purchase_amount__lte=total_price) &
-        Q(expiry_date__gte=today)
-    )
+    all_coupons = MyCoupons.objects.filter(
+            Q(min_purchase_amount__lte=total_price) &
+            Q(expiry_date__date__gte=today)
+        )
+
+    valid_coupons = [coupon for coupon in all_coupons if coupon.is_valid()]
 
     
     sub_total = sum (item.variant.price*item.quantity for item in cart_items)
@@ -636,7 +646,6 @@ def cart_order(request):
 def get_coupon_discount(request, coupon_id):
     try:
         coupon = MyCoupons.objects.get(id=coupon_id)
-
         if coupon.is_valid():
             return JsonResponse({'discount': coupon.discount_price})
         else:
@@ -787,8 +796,8 @@ def singleproduct_checkout(request):
         except:
             pass
         
-        if int(quantity) > variant.quantity:
-            messages.error(request,'This item is out of stock, decrease the quantity !')
+        if int(quantity) > variant.quantity-2 or int(quantity)<=0:
+            messages.error(request,'This item is out of stock, change the quantity!')
             return redirect('single_product',product_id=product_id)
         if variant.discount == 0:
             price = Decimal(variant.price)
@@ -800,11 +809,14 @@ def singleproduct_checkout(request):
             discount= round(variant.price * Decimal(variant.discount/100),2)
 
         today = date.today()
-        valid_coupons = MyCoupons.objects.filter(
-        Q(min_purchase_amount__lte=total_price) &
-        Q(expiry_date__gte=today)
-    )
-        print(valid_coupons)
+        all_coupons = MyCoupons.objects.filter(
+            Q(min_purchase_amount__lte=total_price) &
+            Q(expiry_date__date__gte=today)
+        )
+
+        valid_coupons = [coupon for coupon in all_coupons if coupon.is_valid()]
+
+
         
         context={
             'product':product,
