@@ -156,7 +156,7 @@
         </div>
         
          <p class="stock-status product-stock" style="font-size: x-large;">
-          {% if variant.quantity < 2 %}
+          {% if variant.quantity == 0 %}
             Out of Stock !
           {% else %}
             In Stock
@@ -246,7 +246,7 @@
 
           productPrice.textContent = `Price: ${data.variant.price} Rs`;
   
-          if (data.variant.quantity < 2) {
+          if (data.variant.quantity ==0) {
             buyNowButton.style.display = 'none';
             addToCartButton.style.display = 'none';
 
@@ -330,7 +330,7 @@
                   }
   
         // Update stock status
-        if (data.variant.quantity < 2) {
+        if (data.variant.quantity == 0) {
           buyNowButton.style.display = 'none';
           addToCartButton.style.display = 'none';
           productStock.textContent = 'Out of Stock!';

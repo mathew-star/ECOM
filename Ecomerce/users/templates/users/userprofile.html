@@ -3,7 +3,73 @@
 {% load static %}
 {% block css %}
 <link rel="stylesheet" href="{% static "css/userprofile.css" %} ">
+<style>
+  body {
+    background-color: #f8f9fa;
+    font-family: 'Arial', sans-serif;
+}
 
+
+
+#profile-card {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#profile-card i {
+    margin-top: 20px;
+    margin-left: 8px;
+    font-size: 2rem;
+}
+
+#profile-card .DxGiT2 {
+    margin-left: 10px;
+}
+
+#sidebar {
+    padding-top: 20px;
+}
+
+#user-profile {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    height: 100%;
+}
+
+.btn-danger {
+    width: 100%;
+    margin-top: 20px;
+}
+
+@media (max-width: 767px) {
+    #profile-card {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #profile-card .DxGiT2 {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+
+    #sidebar {
+        display: none;
+    }
+
+    #user-profile {
+        margin-top: 20px;
+    }
+}
+
+@media (min-width: 576px) {
+    #user-profile {
+        margin-top: 28px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block main %}
@@ -58,7 +124,7 @@
       </nav>
       
     <main class="col-md-8 ms-sm-auto col-lg-8 border" id="user-profile">
-      <div class="container mt-3" style="height: 100vh;">
+      <div class="container mt-5" style="height: 100vh; margin-top: 0px;">
 
         <div class="row">
           <div class="col-md-8">

@@ -4,34 +4,30 @@
 <style>
     body {
         background-color: #f8f9fa;
+        font-family: 'Arial', sans-serif;
     }
 
-
     .cart-container {
-        max-width:1000px;
-        margin-left: 1%;
-        margin-top: 50px;
+        max-width: 1200px;
+        margin: 50px auto;
         display: flex;
         flex-wrap: wrap;
         gap: 30px;
+        justify-content: center;
     }
 
     .cart-items {
-        flex: 12;
+        flex: 1;
         padding: 20px;
-        width: 100%;
-        height: auto;
         background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
-        margin-left: 1px;
     }
 
     .order-summary {
-        flex: 1;
-        width: 100%;
-        height: auto;
+        flex: 0 0 300px;
+        height: 300px; /* Set a fixed height for order-summary card */
         padding: 20px;
         background-color: #fff;
         border-radius: 8px;
@@ -39,14 +35,10 @@
         margin-top: 2px;
     }
 
+
     table {
         width: 100%;
         margin-top: 20px;
-    }
-
-    th {
-        border: 1px solid #dee2e6;
-        border-collapse: collapse;
     }
 
     th, td {
@@ -58,37 +50,27 @@
         background-color: #f8f9fa;
     }
 
-    .coupon-code {
-        margin-top: 20px;
-    }
-
-    .subtotal, .total {
-        font-weight: bold;
-        font-size: 18px;
-        margin-top: 20px;
-    }
-
     .quantity {
-        width: 100%;
-        margin: 0 auto;
         display: flex;
-        float: left;
-        margin-right: 3rem;
+        align-items: center;
+        max-width: 150px;
+        margin: 0 auto;
     }
 
     .quantity input {
-        width: 70%;
+        width: 50px;
         font-size: 15px;
         padding: 10px;
         border: none;
         background-color: #A7A9BA;
         box-sizing: border-box;
         text-align: center;
+        margin: 0 5px;
     }
 
     .quantity button {
-        width: 30%;
-        height: 50px;
+        width: 30px;
+        height: 30px;
         font-size: 16px;
         background-color: #f1f1f1;
         border: none;
@@ -97,33 +79,36 @@
 
     .quantity-minus, .quantity-plus {
         border-radius: 5px;
-        margin: 0;
+    }
+
+    .btn-success {
+        width: 100%;
     }
 
     /* Responsive Styles */
     @media (max-width: 767px) {
         .cart-container {
-            max-width: fit-content;
-            margin-left: 0;
+            max-width: 100%;
+            margin: 20px 0%;
         }
 
         .cart-items, .order-summary {
             flex: 100%;
         }
 
-        .quantity {
-            margin-right: 0;
+        .quantity input {
+            width: 40px;
+        }
+
+        .quantity button {
+            width: 20px;
+            height: 20px;
         }
     }
 
     @media (min-width: 768px) and (max-width: 991px) {
-        .cart-items {
-            flex: 100%;
-        }
-
-        .order-summary {
-            flex: 100%;
-            margin-top: 20px;
+        .quantity {
+            max-width: 100px;
         }
     }
 </style>
@@ -136,37 +121,36 @@
     <div class="container">
         {% for message in messages %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-       {% endfor %}
+        {% endfor %}
     </div>
-      
 
-       <div class="cart-items col-lg-8">
-           <h2>Your Cart</h2>
-           <table class="table">
-               <thead>
-                   <tr>
-                      <th>Image</th>
-                      <th>Variant</th>
-                      <th>Quantity</th>
-                      <th>Price</th>
-                      <th>Action</th>
-                   </tr>
-               </thead>
-               <tbody>
-                   {% for item in cart_items %}
-                   <tr>
+    <div class="cart-items">
+        <h2>Your Cart</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Variant</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
                     {% with product_image=item.product_images.first %}
                     <td><img src="{{ product_image.image.url }}" alt="Product Image" style="width: 50px;"></td>
-                {% endwith %}                      
-                <td>{{ item.product.name }} 
-                    <div style="display: flex;">
-                    <p class="me-3">{{item.color.name}}</p>{% if item.variant.discount != 0 %}  <span class="text-danger"> -{{item.variant.discount}}% </span> {% endif %}
-                    </div>  
-                </td>
-                      <td>
+                    {% endwith %}
+                    <td>{{ item.product.name }}
+                        <div style="display: flex;">
+                            <p class="me-3">{{item.color.name}}</p>{% if item.variant.discount != 0 %} <span class="text-danger"> -{{item.variant.discount}}% </span> {% endif %}
+                        </div>
+                    </td>
+                    <td>
                         <div class="quantity">
                             <button class="quantity-minus" onclick="decreaseQuantity('{{ item.id }}');updateStockStatus();">-</button>
                             <input type="number" id="quantity-{{ item.id }}" min="1" max="100" value="{{ item.quantity }}" oninput="updateStockStatus()">
@@ -174,31 +158,31 @@
                         </div>
                         <p class="stock-status" style="font-size: small;">
                             {% if variant.quantity < 2 %}
-                              Out of Stock !
+                            Out of Stock!
                             {% else %}
-                              In Stock
+                            In Stock
                             {% endif %}
-                           </p>
-                      </td>
-                      <td>{{ item.variant.price }} <span id="quantity_price"></span></td>
-                       <td><a href="{% url 'remove_cart_item' itemid=item.id %}"><i class="fa-solid fa-trash" style="color: #000000;"></i></a></td>
-                    </tr>
-                   {% endfor %}
-               </tbody>
-           </table>
-           <p>Bag Count: {{ bag_count}}</p>
-       </div>
-    
-       <div class="order-summary col-lg-4">
-           <h2>Order Summary</h2>
-           <p id="subtotal">Subtotal: {{ sub_total }}Rs</p>
-           <p id="discount">Discount: {{ discount }}Rs</p>
-           <p id="shipping" >Shipping : FREE</p>
-           <p id="total-price">Total: {{ total_price }} Rs</p>
-           
-           <a href="{% url 'cart_order' %}" class="btn btn-success mt-3">Proceed to Checkout</a>       </div>
+                        </p>
+                    </td>
+                    <td>{{ item.variant.price }} <span id="quantity_price"></span></td>
+                    <td><a href="{% url 'remove_cart_item' itemid=item.id %}"><i class="fa-solid fa-trash" style="color: #000000;"></i></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p>Bag Count: {{ bag_count}}</p>
     </div>
-    
+
+    <div class="order-summary">
+        <h2>Order Summary</h2>
+        <p id="subtotal">Subtotal: {{ sub_total }}Rs</p>
+        <p id="discount">Discount: {{ discount }}Rs</p>
+        <p id="shipping">Shipping : FREE</p>
+        <p id="total-price">Total: {{ total_price }} Rs</p>
+
+        <a href="{% url 'cart_order' %}" class="btn btn-success mt-3">Proceed to Checkout</a>
+    </div>
+</div>
     {% endblock %}
     {% block script %}
     <script>

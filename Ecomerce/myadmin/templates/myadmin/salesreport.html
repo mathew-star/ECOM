@@ -12,7 +12,7 @@
 
     <div class="row mt-4">
       <div class="col-md-6">
-        <form method="get" action="{% url 'sales_report' format='pdf' %}">
+        <form method="get" action="{% url 'sales_table' format='pdf' %}">
           {% csrf_token %}
           <div class="form-group">
             <label for="start_date">Start Date:</label>
@@ -23,13 +23,13 @@
             <label for="end_date">End Date:</label>
             <input type="date" class="form-control" id="end_date" name="end_date" required>
           </div>
-
           <button type="submit" class="btn btn-primary">Generate PDF Report</button>
+          
         </form>
       </div>
 
       <div class="col-md-6">
-        <form method="get" action="{% url 'sales_report' format='excel' %}">
+        <form method="get" action="{% url 'sales_table' format='excel' %}">
           {% csrf_token %}
           <div class="form-group">
             <label for="start_date">Start Date:</label>
@@ -40,7 +40,6 @@
             <label for="end_date">End Date:</label>
             <input type="date" class="form-control" id="end_date" name="end_date" required>
           </div>
-
           <button type="submit" class="btn btn-success">Generate Excel Report</button>
         </form>
       </div>

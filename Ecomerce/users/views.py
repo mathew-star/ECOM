@@ -205,7 +205,7 @@ def get_stock_status(request):
     print(color_id, quantity)
     variant = Variant.objects.get(color_id=color_id)
     print(variant.quantity)
-    stock= variant.quantity - 2
+    stock= variant.quantity
     out_of_stock=None
 
     if int(quantity) > stock:
@@ -507,8 +507,10 @@ def remove_wishlist_item(request,itemid):
 @login_required
 def add_to_wishlist(request, product_id,variant_id):
     user = request.user
+    print(product_id, variant_id)
     product = get_object_or_404(MyProducts, id=product_id)
     variant = get_object_or_404(Variant, id=variant_id)
+    print(variant.color.name, variant.quantity, variant.price)
     wishlist_item, created = whishlist.objects.get_or_create(user=user, product=product,variant=variant,color=variant.color)
 
     if created:
@@ -659,13 +661,10 @@ def cart_order(request):
 
     first_address = address.first()
     for item in cart_items:
-            print(item.quantity)
-            print(item.variant.quantity)
-            print(item.quantity>item.variant.quantity)
-            if item.quantity>(item.variant.quantity-2) and item.quantity> 0:
+            if item.quantity>(item.variant.quantity) and item.quantity> 0:
                 messages.error(request,f"{item.product.name} is Out of stock, decrease the quantity or come later ")
                 return redirect('cartitems_list')
-            if item.variant.quantity < 2:
+            if item.variant.quantity == 0:
                 messages.error(request, f"Item '{item.product.name}' is out of stock.")
                 return redirect('cartitems_list')
     
@@ -853,7 +852,7 @@ def singleproduct_checkout(request):
         except:
             pass
         
-        if int(quantity) > variant.quantity-2 or int(quantity)<=0:
+        if int(quantity) > variant.quantity or int(quantity)<=0:
             messages.error(request,'This item is out of stock, change the quantity!')
             return redirect('single_product',product_id=product_id)
         if variant.discount == 0:

@@ -114,9 +114,13 @@
         <div class="col-md-4 mb-4">
          
             <div class="product-card">
+                {% with first_variant=product.variant_set.first %}
+                    {% if first_variant %}
                 <button class="wishlist-btn" onclick="toggleWishlist(this, {{ product.id }}, {{ first_variant.id }})">
                     <i class="far fa-heart"></i>
                 </button>
+                {% endif %}
+                {% endwith %}
                     
                 <a href="{% url 'single_product' product_id=product.id %}" class="prod-det">
                 {% for img in product.productimages_set.all %}

@@ -589,7 +589,7 @@ def addoffer(request):
     
         try:
             discount_percentage = float(discount)
-            if 0 <= discount_percentage <= 100:
+            if 0 <= discount_percentage <= 70:
                 variant.discount = discount_percentage
                 variant.discount_price = variant.get_discount()
                 variant.save()
@@ -597,14 +597,13 @@ def addoffer(request):
                 return redirect('productoffer')
             else:
                 messages.error(request, "Invalid Discount Percentage")
-                return render(request, 'myadmin/productoffer.html')
+                return redirect('productoffer')
         except ValueError:
             messages.error(request, "Invalid discount percentage")
-            return render(request, 'myadmin/productoffer.html', {'error_message': 'Invalid discount percentage'})
+            return redirect('productoffer')
     else:
         messages.error(request, "Invalid request method")
-        return render(request, 'myadmin/productoffer.html', {'error_message': 'Invalid request method'})
-    
+        return redirect('productoffer')    
 
 
 def add_category_offer(request):
@@ -618,7 +617,7 @@ def add_category_offer(request):
 
         try:
             discount = Decimal(discount)
-            if 0 <= discount <= 100:
+            if 0 <= discount <= 70:
                 for variant in variants:
                     variant.discount = discount
                     variant.discount_price = variant.get_discount()
@@ -631,10 +630,10 @@ def add_category_offer(request):
             
             else:
                 messages.error(request, "Invalid Discount Percentage")
-                return render(request, 'myadmin/productoffer.html')
+                return redirect('productoffer')
         except ValueError:
             messages.error(request, "Invalid Discount Percentage")
-            return render(request, 'myadmin/productoffer.html')
+            return redirect( 'productoffer')
 
 
 
@@ -716,19 +715,54 @@ def get_yearly_chart_data(request):
     return render(request, "myadmin/charts.html", {'labels': labels, 'data': data, 'chart_type': 'yearly'})
 
 
+
 def sales(request):
     return render(request, "myadmin/salesreport.html")
-    
-def sales_report(request,format):
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
 
+
+def sales_table(request,format):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    print(start_date, end_date)
+    
     try:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     except ValueError:
         return HttpResponse("Invalid date format", status=400)
     
+    today = timezone.now().date()
+    if start_date > today:
+        messages.error(request,"Start date cannot be in the future")
+        return redirect('sales')
+    
+    if end_date > today:
+        messages.error(request,"End date cannot be in the future")
+        return redirect('sales')
+    
+
+    if end_date < start_date:
+        messages.error(request,"End date cannot be before start date")
+        return redirect('sales')
+
+    
+    orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
+
+    return render(request, "myadmin/pdf_preview.html",{'orders':orders,'format':format,'start_date':start_date,'end_date':end_date})
+    
+
+def sales_report(request,format):
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    print(start_date_str, end_date_str)
+    print(type(start_date_str), type(end_date_str))
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%b. %d, %Y').date()
+        end_date = datetime.strptime(end_date_str, '%b. %d, %Y').date()
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
         # Date validation
     today = timezone.now().date()
 
@@ -744,7 +778,6 @@ def sales_report(request,format):
     if end_date < start_date:
         messages.error(request,"End date cannot be before start date")
         return redirect('sales')
-
 
 
     if format == 'pdf':
@@ -771,6 +804,7 @@ def generate_pdf(start_date, end_date):
         return HttpResponse('We had some errors <pre>' + html + '</pre>')
 
     return response
+
 
 def generate_excel(start_date, end_date):
    orders = Order.objects.filter(created_at__date__range=[start_date, end_date])
