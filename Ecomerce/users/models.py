@@ -130,7 +130,7 @@ class Order(models.Model):
     coupon_price = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     order_address =models.ForeignKey(OrderAddress,on_delete=models.CASCADE,related_name='orderaddress',null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount= models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    discount= models.DecimalField(max_digits=7, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     order_status = models.ForeignKey(OrderStatus, on_delete=models.SET_NULL, null=True)
@@ -172,6 +172,7 @@ class Order(models.Model):
     #             hourly_data[index]['cancelled_orders_count'] = entry['cancelled_orders_count']
 
     #     return hourly_data
+
     
     @classmethod
     def get_daily_orders_chart_data(cls):
