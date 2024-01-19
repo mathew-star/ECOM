@@ -218,22 +218,69 @@ def get_stock_status(request):
 
     return JsonResponse(data)
 
+
 def shop(request):
-    if request.user.is_authenticated == False:
+    if not request.user.is_authenticated:
         return redirect('signup')
 
-    products= MyProducts.objects.all()
-    images= ProductImages.objects.all()
+    products = MyProducts.objects.all()
+    images = ProductImages.objects.all()
     sort_option = request.GET.get('sort', 'default')
-
-    images = ProductImages.objects.all()  
+    price_range = request.GET.get('price_range', 'all')
+    is_filter= request.GET.get('filter')
+    is_sort = request.GET.get('sort')
+    print(is_filter)
 
     if sort_option == 'low_to_high':
-        products = MyProducts.objects.all().order_by('variant__price').distinct()
+        products = products.order_by('variant__price')
     elif sort_option == 'high_to_low':
-        products = MyProducts.objects.all().order_by('-variant__price').distinct()
-    else:
-        products = MyProducts.objects.all().distinct()
+        products = products.order_by('-variant__price')
+
+    products_500_1000 = products.filter(variant__price__gte=500, variant__price__lte=1000)
+    products_1000_2000 = products.filter(variant__price__gt=1000, variant__price__lte=2000)
+    products_2000_ = products.filter( variant__price__gte=2000)
+
+    if sort_option == 'low_to_high':
+        products_500_1000 = products_500_1000.order_by('variant__price')
+        products_1000_2000 = products_1000_2000.order_by('variant__price')
+    elif sort_option == 'high_to_low':
+        products_500_1000 = products_500_1000.order_by('-variant__price')
+        products_1000_2000 = products_1000_2000.order_by('-variant__price')
+
+    if price_range == '500_1000':
+        print("500")
+        if products_500_1000.exists(): 
+            products = products_500_1000
+            print(products)
+        else:
+
+            products = MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,})
+
+    elif price_range == '1000_2000':
+        if products_1000_2000.exists():
+            products = products_1000_2000
+        else:
+            products = MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,})
+
+    elif price_range == '2000_':
+        if products_2000_.exists():
+            products = products_2000_
+        else:
+            products=MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,})
+    
+
+    elif price_range == 'all':
+        if sort_option == 'low_to_high':
+            products = products.order_by('variant__price')
+        elif sort_option == 'high_to_low':
+            products = products.order_by('-variant__price')
+    
+
+        
+
 
     first_variant_prices = {}
 
@@ -241,14 +288,11 @@ def shop(request):
         first_variant = Variant.objects.filter(product_id=product).first()
         if first_variant:
             first_variant_prices[product.id] = first_variant.price
-    unique_products = {}
-    for product in products:
-        unique_products[product.id] = product
 
+    unique_products = {product.id: product for product in products}
     unique_product_list = list(unique_products.values())
 
-
-    return render(request,'users/shop.html',{'products':unique_product_list,'images':images,'first_variant':first_variant})
+    return render(request, 'users/shop.html', {'products': unique_product_list, 'images': images, 'first_variant': first_variant,'sort':sort_option,'price_range':price_range})
 
 
 
@@ -257,7 +301,9 @@ def c_shop(request, category):
     if request.user.is_authenticated == False:
         return redirect('signup')
     category= Category.objects.get(name=category)
+    products= MyProducts.objects.filter(category=category)
     sort_option = request.GET.get('sort', 'default')
+    price_range = request.GET.get('price_range', 'all')
 
     if sort_option == 'low_to_high':
         products = MyProducts.objects.filter(category=category).order_by('variant__price')
@@ -266,16 +312,48 @@ def c_shop(request, category):
     else:
         products = MyProducts.objects.filter(category=category)
 
+    products_500_1000 = products.filter(variant__price__gte=500, variant__price__lte=1000)
+    products_1000_2000 = products.filter(variant__price__gt=1000, variant__price__lte=2000)
+    products_2000_ = products.filter( variant__price__gte=2000)
+
+
+    if price_range == '500_1000':
+        print("500")
+        if products_500_1000.exists(): 
+            products = products_500_1000
+            print(products)
+        else:
+
+            products = MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,'category':category})
+
+    elif price_range == '1000_2000':
+        if products_1000_2000.exists():
+            products = products_1000_2000
+        else:
+            products = MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,'category':category})
+
+    elif price_range == '2000_':
+        if products_2000_.exists():
+            products = products_2000_
+        else:
+            products=MyProducts.objects.none()
+            return render(request, 'users/shop.html', {'products': products,'category':category})
+    
+
+    elif price_range == 'all':
+        if sort_option == 'low_to_high':
+            products = products.order_by('variant__price')
+        elif sort_option == 'high_to_low':
+            products = products.order_by('-variant__price')
+
     unique_products = {}
     for product in products:
         unique_products[product.id] = product
 
     unique_product_list = list(unique_products.values())
         
-    category = get_object_or_404(Category, name=category)
-    products = MyProducts.objects.filter(category=category)
-    images = ProductImages.objects.filter(product__in=products)
-    category = get_object_or_404(Category, name=category)
 
 
     return render(request, 'users/shop.html', {'products': unique_product_list, 'category':category})

@@ -9,6 +9,8 @@
 
     .filter-container {
         display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
@@ -86,29 +88,48 @@
     
     <div class="filter-container">
         {% if category %}
-        <form class="filter" method="get" action="{% url 'c_shop' category.name %}">
+        <form class="filter mb-2" method="get" action="{% url 'c_shop' category.name %}">
         {% else %}
-        <form class="filter" method="get" action="{% url 'shop' %}">
+        <form class="filter mb-2" method="get" action="{% url 'shop' %}">
         {% endif %}
+        <input type="hidden" value="{{filter}}">
             <select name="sort">
+                
                 <option value="default">Default</option>
                 <option value="low_to_high">Low to High Price</option>
                 <option value="high_to_low">High to Low Price</option>
             </select>
             <button class="btn Apply" type="submit">Apply</button>
+
+        </form>
+
+        {% if category %}
+        <form class="filter mb-2" method="get" action="{% url 'c_shop' category.name %}">
+        {% else %}
+        <form class="filter mb-2" method="get" action="{% url 'shop' %}">
+        {% endif %}
+        <div class="filter">
+            <input type="hidden" value="{{sort}}">
+            <select name="price_range">
+                <option value="all">All Prices</option>
+                <option value="500_1000">Rs. 500 - Rs. 1000</option>
+                <option value="1000_2000">Rs. 1000 - Rs. 2000</option>
+                <option value="2000_">Price >2000</option>
+                <!-- Add more options as needed -->
+            </select>
+            <button class="btn Apply" type="submit">Apply</button>
+        </div>
         </form>
 
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search products...">
         </div>
-        
-
-
     </div>
 
 
-
+    {% if products %}
     <div class="row mt-4 " id="productContainer">
+        
         <!-- Product 1 -->
         {% for product in products %}
         <div class="col-md-4 mb-4">
@@ -150,6 +171,12 @@
         </div>
         {% endfor %}
    </div>
+   {% else %}
+    <div style="height: 80vh;">
+    <p class="no-products-message">No products found in the specified price range.</p>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock main %}
 
