@@ -238,7 +238,7 @@ def shop(request):
 
     products_500_1000 = products.filter(variant__price__gte=500, variant__price__lte=1000)
     products_1000_2000 = products.filter(variant__price__gt=1000, variant__price__lte=2000)
-    products_2000_ = products.filter( variant__price__gte=2000)
+    products_2000_ = products.filter( variant__price__gt=2000)
 
     if sort_option == 'low_to_high':
         products_500_1000 = products_500_1000.order_by('variant__price')

@@ -285,18 +285,28 @@ def home(request):
     
 
     categories= Category.objects.all()
-    products= MyProducts.objects.all()
+
+    product=MyProducts.objects.filter(variant__price__gte=5000)
+    for j in product:
+        print(j.name)
 
     first_variant_prices = {}
 
-    for product in products:
-        first_variant = Variant.objects.filter(product_id=product).first()
+    for p in product:
+        first_variant = Variant.objects.filter(product_id=p).first()
         if first_variant:
-            first_variant_prices[product.id] = first_variant.price
+            first_variant_prices[p.id] = first_variant.price
+
+    print(first_variant.color.name, first_variant.product_id.name)
+
+    unique_products = {p.id: p for p in product}
+    unique_product_list = list(unique_products.values())
+
+    
 
     context = {
          'categories':categories,
-        'products': products,
+        'products': unique_product_list,
         'bag_count':bag_count,
         'first_variant':first_variant,
     }
