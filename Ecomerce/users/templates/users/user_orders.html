@@ -36,6 +36,18 @@ th, td {
 th {
     background-color: #f8f9fa;
 }
+
+@media (max-width: 768px){
+  #sidebar{
+    display: none; !important
+  }
+  #profile-card {
+    display: none; !important
+  }
+  .cart-items{
+    
+  }
+}
 </style>
 
 {% endblock %}
@@ -61,7 +73,7 @@ th {
         </div>
       </div>
 
-    <nav id="sidebar" class="col-md-4 d-md-block sidebar">
+    <nav id="sidebar" class="col-md-4 sidebar">
       <div class="position-sticky">
         <ul class="nav flex-column">
           <li class="nav-item">

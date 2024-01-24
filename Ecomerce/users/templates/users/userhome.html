@@ -98,7 +98,7 @@
             {% endfor %}</a>
 
                 <div class="product-info">
-                    <div class="rating-box">4.1<i class="fas fa-star"></i></div>
+                    {% comment %} <div class="rating-box">4.1<i class="fas fa-star"></i></div> {% endcomment %}
                     {% comment %} <div class="rating-box">4.1<i class="fas fa-star"></i></div> {% endcomment %}
                     <h5 class="product-name"> {{product.name}} </h5>
                     {% with first_variant=product.variant_set.first %}
@@ -121,9 +121,6 @@
    </div>
         <!-- Add more products as needed -->
     </div>
-
-
-
 </div>
 
 <!-- Testimonial Section -->
