@@ -1019,6 +1019,22 @@ def product_checkout(request):
         discount=0
     print(discount)
 
+    if payment == 'Wallet' and w_user:
+        if w_user.amount >= total_price:
+    
+                w_user.amount -= total_price
+                w_user.save()
+
+                WalletHistory.objects.create(
+                    user=user,
+                    amount=total_price,
+                    transaction_type='debit'
+                )
+        else:
+                messages.error(request, "Insufficient funds in your wallet.")
+                return redirect('product_check', product_id=product_id, color_id=color_id, variant_id=variant_id, quantity=quantity)
+        
+
     
     existing_address = OrderAddress.objects.filter(
             user=user,
@@ -1083,21 +1099,7 @@ def product_checkout(request):
     variant.save()
 
 
-    if payment == 'Wallet' and w_user:
-        if w_user.amount >= total_price:
     
-                w_user.amount -= total_price
-                w_user.save()
-
-                WalletHistory.objects.create(
-                    user=user,
-                    amount=total_price,
-                    transaction_type='debit'
-                )
-        else:
-                messages.error(request, "Insufficient funds in your wallet.")
-                return redirect('product_check', product_id=product_id, color_id=color_id, variant_id=variant_id, quantity=quantity)
-        
 
     if payment == 'Online' or payment=='Wallet':
         order.payment_status = "Paid"

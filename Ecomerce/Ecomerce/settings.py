@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-0_=3b7r4_+l_kf_a(i7mljl59s%mcj3w*&^!f@qk7^ug=1k*=6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -88,8 +88,8 @@ WSGI_APPLICATION = 'Ecomerce.wsgi.application'
 DATABASES = {
 'default': {
 'ENGINE': 'django.db.backends.mysql',
-'NAME': 'newtest',
-'USER': 'testusr',
+'NAME': 'Ecom_db',
+'USER': 'pyuser',
 'PASSWORD': 'password',
 'HOST': '127.0.0.1',
 'PORT' : '',

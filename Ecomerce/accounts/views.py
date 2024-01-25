@@ -37,7 +37,11 @@ class PasswordResetTokenGeneratorExtended(PasswordResetTokenGenerator):
 def password_reset_request(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        user = CustomUser.objects.get(email=email)
+        try:
+            user = CustomUser.objects.get(email=email)
+        except:
+            messages.error(request,"User doesn't exist!")
+            return render(request, 'accounts/password_reset_request.html')
 
 
         token_generator = PasswordResetTokenGeneratorExtended()
@@ -61,6 +65,7 @@ def password_reset_request(request):
         )
 
         messages.success(request,"Email has been sent to your email address")
+
     return render(request, 'accounts/password_reset_request.html')
 
 
