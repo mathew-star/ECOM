@@ -149,17 +149,22 @@ def add_category(request):
         if form.is_valid():
             category=form.save()
 
-            new_offer_percentage = request.POST.get('new_offer_percentage')
-            new_offer_start_date = request.POST.get('new_offer_start_date')
-            new_offer_end_date = request.POST.get('new_offer_end_date')
+            # new_offer_percentage = request.POST.get('new_offer_percentage')
+            # new_offer_start_date = request.POST.get('new_offer_start_date')
+            # new_offer_end_date = request.POST.get('new_offer_end_date')
 
-            if new_offer_percentage and new_offer_start_date and new_offer_end_date:
-                CategoryOffer.objects.create(
-                    category=category,
-                    discount_percentage=new_offer_percentage,
-                    start_date=new_offer_start_date,
-                    end_date=new_offer_end_date
-                )
+            # if new_offer_percentage and new_offer_start_date and new_offer_end_date:
+            #     CategoryOffer.objects.create(
+            #         category=category,
+            #         discount_percentage=new_offer_percentage,
+            #         start_date=new_offer_start_date,
+            #         end_date=new_offer_end_date
+            #     )
+            try:
+                category_offer=CategoryOffer.objects.get(category=category)
+            except:
+                category_offer=CategoryOffer.objects.create(category=category,discount_percentage=0)
+
 
 
             return redirect('category_list')
@@ -177,47 +182,45 @@ def edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     category_offer = get_object_or_404(CategoryOffer, category=category)
     if request.method == 'POST':
-        form = CategoryForm(request.POST, instance=category)
-        discount_percentage = request.POST.get('new_offer_percentage', 0)
-        new_offer_start_date = request.POST.get('new_offer_start_date', date.today())
-        new_offer_end_date = request.POST.get('new_offer_end_date', date.today())
+        form = CategoryForm(request.POST,request.FILES, instance=category )
+        # discount_percentage = request.POST.get('new_offer_percentage', 0)
+        # new_offer_start_date = request.POST.get('new_offer_start_date', date.today())
+        # new_offer_end_date = request.POST.get('new_offer_end_date', date.today())
 
-        try:
-            start_date = date.fromisoformat(new_offer_start_date)
-            end_date = date.fromisoformat(new_offer_end_date)
-        except ValueError:
-            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Invalid date format.'})
+        # try:
+        #     start_date = date.fromisoformat(new_offer_start_date)
+        #     end_date = date.fromisoformat(new_offer_end_date)
+        # except ValueError:
+        #     return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Invalid date format.'})
 
-        print(start_date , end_date)
-        print(end_date < start_date)
-        print(date.today())
-        print(start_date < date.today())
+        # print(start_date , end_date)
+        # print(end_date < start_date)
+        # print(date.today())
+        # print(start_date < date.today())
 
-        if end_date < start_date:
-            messages.warning(request,"Error date !")
-            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be after the start date.'})
+        # if end_date < start_date:
+        #     messages.warning(request,"Error date !")
+        #     return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be after the start date.'})
 
-        if start_date < date.today():
-            messages.warning(request,"Error date !")
-            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Start date should be today or in the future.'})
+        # if start_date < date.today():
+        #     messages.warning(request,"Error date !")
+        #     return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'Start date should be today or in the future.'})
 
-        if end_date < date.today():
-            messages.warning(request,"Error date !")
-            return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be today or in the future.'})
+        # if end_date < date.today():
+        #     messages.warning(request,"Error date !")
+        #     return render(request, 'myadmin/edit_category.html', {'form': form, 'category': category, 'category_offer': category_offer, 'error': 'End date should be today or in the future.'})
 
         if form.is_valid():
             form.save()
 
-            if discount_percentage:
-                category_offer.discount_percentage = discount_percentage
-            if start_date:
-                category_offer.start_date = start_date
-            if end_date:
-                category_offer.end_date = end_date
+            # if discount_percentage:
+            #     category_offer.discount_percentage = discount_percentage
+            # if start_date:
+            #     category_offer.start_date = start_date
+            # if end_date:
+            #     category_offer.end_date = end_date
 
-            category_offer.save()
-
-
+            # category_offer.save()
             return redirect('category_list')
     else:
         form = CategoryForm(instance=category)
@@ -644,14 +647,20 @@ def adminhome(request):
         categories = Category.objects.annotate(order_count=Count('myproducts__variant__orderitem__order__id'))
 
         high_demand_category = categories.order_by('-order_count').first()
+        print(high_demand_category)
 
         payment_options = Order.objects.values('payment').annotate(order_count=Count('id'))
 
         high_demand_payment_option = payment_options.order_by('-order_count').first()
-        p=payment_options[0]
-        high_demand_payment_option=p['payment']
-        payment_order_count = p['order_count']
-        print(payment_options)
+        try:
+            p=payment_options[0]
+            high_demand_payment_option=p['payment']
+            payment_order_count = p['order_count']
+        except:
+            high_demand_payment_option=None
+            payment_order_count=0
+
+
 
         today = datetime.today().date()
         start_of_month = today.replace(day=1)

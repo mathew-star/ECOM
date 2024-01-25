@@ -11,7 +11,7 @@ from accounts.form import CustomUserCreationForm
 from accounts.models import CustomUser
 from myadmin.models import BlockedUser
 from myadmin.models import Category,MyProducts,ProductImages, Variant
-from users.models import cartitems,Referral,Wallet_user,WalletHistory
+from users.models import cartitems,Referral,Wallet_user,WalletHistory,OrderStatus
 from django.core import signing 
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
@@ -278,6 +278,17 @@ def resend_otp(request, user_id):
 
 
 def home(request):
+    order_stat=OrderStatus.objects.all()
+    if order_stat:
+        pass
+    else:
+        o=OrderStatus.objects.create(status='Pending')
+        o=OrderStatus.objects.create(status='Shipped')
+        o=OrderStatus.objects.create(status='Delivered')
+        o=OrderStatus.objects.create(status='Canceled')
+        o=OrderStatus.objects.create(status='Returned')
+        o=OrderStatus.objects.create(status='Paid')
+
     if request.user.is_authenticated == False and request.user.is_active == False:
         return redirect('signup')
     cart_items = cartitems.objects.filter(user=request.user)
@@ -297,18 +308,16 @@ def home(request):
         if first_variant:
             first_variant_prices[p.id] = first_variant.price
 
-    print(first_variant.color.name, first_variant.product_id.name)
-
     unique_products = {p.id: p for p in product}
     unique_product_list = list(unique_products.values())
 
     
 
     context = {
-         'categories':categories,
+        'categories':categories,
         'products': unique_product_list,
         'bag_count':bag_count,
-        'first_variant':first_variant,
+        # 'first_variant':first_variant,
     }
 
     images= ProductImages.objects.all()

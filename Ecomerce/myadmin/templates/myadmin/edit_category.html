@@ -23,7 +23,7 @@
       </div>
 
             <!-- New Offer Fields -->
-            <div class="mb-3">
+            {% comment %} <div class="mb-3">
               <label for="new_offer_percentage" class="form-label">New Offer Percentage</label><p>Applied offer {{category_offer.discount_percentage}}%  </p>
               <input type="number" class="form-control" name="new_offer_percentage" id="new_offer_percentage" min="0" max="100" step="1" placeholder="Enter offer percentage" required>
            </div>
@@ -36,7 +36,7 @@
            <div class="mb-3">
               <label for="new_offer_end_date" class="form-label">New Offer End Date</label>
               <input type="date" class="form-control" name="new_offer_end_date" id="new_offer_end_date" value="{{ date.today }}" placeholder="Select end date" required>
-           </div>
+           </div> {% endcomment %}
             <!-- End New Offer Fields -->
 
       <div class="mb-3">

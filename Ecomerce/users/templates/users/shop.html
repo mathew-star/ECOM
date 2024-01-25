@@ -133,7 +133,7 @@
         <!-- Product 1 -->
         {% for product in products %}
         <div class="col-md-4 mb-4">
-         
+            {% if product.category.is_listed == False %}
             <div class="product-card">
                 {% with first_variant=product.variant_set.first %}
                     {% if first_variant %}
@@ -169,6 +169,7 @@
               
             </div>
         </div>
+        {% endif %}
         {% endfor %}
    </div>
    {% else %}

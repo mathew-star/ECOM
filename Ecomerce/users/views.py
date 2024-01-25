@@ -292,7 +292,7 @@ def shop(request):
     unique_products = {product.id: product for product in products}
     unique_product_list = list(unique_products.values())
 
-    return render(request, 'users/shop.html', {'products': unique_product_list, 'images': images, 'first_variant': first_variant,'sort':sort_option,'price_range':price_range})
+    return render(request, 'users/shop.html', {'products': unique_product_list, 'images': images,'sort':sort_option,'price_range':price_range})
 
 
 
