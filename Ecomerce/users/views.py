@@ -929,8 +929,11 @@ def singleproduct_checkout(request):
             category_offer= CategoryOffer.objects.get(category=product.category)
         except:
             pass
+        if not quantity:
+            messages.error(request,'Invalid quantity, change the quantity!')
+            return redirect('single_product',product_id=product_id)
         
-        if int(quantity) > variant.quantity or int(quantity)<=0:
+        if int(quantity) > variant.quantity or int(quantity)<=0 :
             messages.error(request,'This item is out of stock, change the quantity!')
             return redirect('single_product',product_id=product_id)
         if variant.discount == 0:
