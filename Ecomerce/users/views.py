@@ -1317,6 +1317,9 @@ def cancel_order(request):
         oid = request.POST.get('order_id')
         order = get_object_or_404(Order, id=oid)
         order_items = OrderItem.objects.filter(order=order)
+        print(order_items)
+        for i in order_items:
+            print(i.variant.price, i.variant.product_id.name)
 
         for item in order_items:
             variant = Variant.objects.get(id=item.variant.id)

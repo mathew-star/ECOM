@@ -88,7 +88,7 @@ WSGI_APPLICATION = 'Ecomerce.wsgi.application'
 DATABASES = {
 'default': {
 'ENGINE': 'django.db.backends.mysql',
-'NAME': 'Ecom_db',
+'NAME': 'EcomDB',
 'USER': 'pyuser',
 'PASSWORD': 'password',
 'HOST': '127.0.0.1',
