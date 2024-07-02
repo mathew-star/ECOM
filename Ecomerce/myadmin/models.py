@@ -1,7 +1,6 @@
 from decimal import Decimal
 from django.db import models
 from accounts.models import CustomUser
-from colorfield.fields import ColorField
 from django.utils import timezone
 
 class BlockedUser(models.Model):
